@@ -2,7 +2,7 @@
 
 GPU overclocking/undervolting utility for Blackwell RTX 50-series on Linux.
 
-Bourn out of my frustration with the lack of an API that is both easy to use in the terminal, and easy to script around.
+Born out of my frustration with the lack of an API that is both easy to use in the terminal, and easy to script around.
 
 **WARNING: Overclocking may damage hardware.**
 
