@@ -93,6 +93,7 @@ impl Config {
                     .long("offset")
                     .value_name("GRAPHICS_OFFSET")
                     .help("GPU offset MHz")
+                    .allow_hyphen_values(true)
                     .value_parser(clap::value_parser!(i32)),
             )
             .arg(
@@ -101,6 +102,7 @@ impl Config {
                     .long("memory-offset")
                     .value_name("MEMORY_OFFSET")
                     .help("Mem offset MHz")
+                    .allow_hyphen_values(true)
                     .value_parser(clap::value_parser!(i32)),
             )
             .arg(
