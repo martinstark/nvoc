@@ -1,6 +1,6 @@
 //! Command-line interface parsing and configuration
 
-use crate::constants::{app, cli};
+use crate::constants::app;
 use clap::{Arg, Command};
 
 fn device_arg() -> Arg {
@@ -42,8 +42,8 @@ pub struct Config {
 }
 
 fn parse_clocks(s: &str) -> std::result::Result<(u32, u32), &'static str> {
-    let parts: Vec<&str> = s.split(cli::CLOCK_SEPARATOR).collect();
-    if parts.len() != cli::CLOCK_PARTS_COUNT {
+    let parts: Vec<&str> = s.split(',').collect();
+    if parts.len() != 2 {
         return Err("Clock format must be 'min,max'");
     }
 

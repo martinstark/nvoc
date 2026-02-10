@@ -2,7 +2,7 @@
 
 /// Application metadata
 pub mod app {
-    pub const VERSION: &str = "0.1.0";
+    pub const VERSION: &str = env!("CARGO_PKG_VERSION");
     pub const NAME: &str = "nvoc";
     pub const AUTHOR: &str = "NVOC Contributors";
     pub const DESCRIPTION: &str = "NVIDIA GPU overclocking utility for Blackwell (RTX 50-series)";
@@ -20,12 +20,6 @@ pub mod hardware {
     pub const MILLIWATTS_TO_WATTS: u32 = 1000;
 }
 
-/// Power management limits and validation
-pub mod power {
-    /// Power calculation precision factor
-    pub const POWER_PRECISION: f32 = 100.0;
-}
-
 /// Clock management and validation
 pub mod clocks {
     /// Blackwell idle clock range for safe reset (min, max in MHz)
@@ -39,15 +33,6 @@ pub mod clocks {
     pub const DEFAULT_MEMORY_OFFSET: i32 = 0;
 }
 
-/// CLI parsing constants
-pub mod cli {
-    /// Required number of parts in clock string format "min,max"
-    pub const CLOCK_PARTS_COUNT: usize = 2;
-
-    /// Command line argument separator for clock ranges
-    pub const CLOCK_SEPARATOR: char = ',';
-}
-
 /// Buffer sizes for NVML operations
 pub mod buffers {
     /// Driver version string buffer size
@@ -55,10 +40,4 @@ pub mod buffers {
 
     /// Device name buffer size
     pub const DEVICE_NAME_BUFFER_SIZE: usize = 64;
-}
-
-/// Error codes and validation
-pub mod errors {
-    /// Unknown NVML error fallback code
-    pub const NVML_UNKNOWN_ERROR_CODE: u32 = 999;
 }

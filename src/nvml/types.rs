@@ -3,7 +3,7 @@
 //! This module defines the types, enums, and constants used by the NVML API
 //! for GPU management and overclocking operations.
 
-use crate::constants::{buffers, errors};
+use crate::constants::buffers;
 
 use libc::{c_int, c_uint, c_void};
 
@@ -59,7 +59,7 @@ pub const NVML_ERROR_FREQ_NOT_SUPPORTED: NvmlReturn = 24;
 pub const NVML_ERROR_ARGUMENT_VERSION_MISMATCH: NvmlReturn = 25;
 pub const NVML_ERROR_DEPRECATED: NvmlReturn = 26;
 pub const NVML_ERROR_NOT_READY: NvmlReturn = 27;
-pub const NVML_ERROR_UNKNOWN: NvmlReturn = errors::NVML_UNKNOWN_ERROR_CODE;
+pub const NVML_ERROR_UNKNOWN: NvmlReturn = 999;
 
 // Buffer sizes
 pub const NVML_DEVICE_NAME_BUFFER_SIZE: usize = buffers::DEVICE_NAME_BUFFER_SIZE;
