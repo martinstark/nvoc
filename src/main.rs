@@ -58,16 +58,8 @@ fn run() -> Result<(), AppError> {
         Operation::Reset { dry_run } => {
             gpu::reset::reset_gpu_settings(device, dry_run)?;
         }
-        Operation::Overclock {
-            clocks,
-            graphics_offset,
-            memory_offset,
-            power_limit,
-            dry_run,
-        } => {
-            gpu::overclock::apply(
-                device, clocks, graphics_offset, memory_offset, power_limit, dry_run,
-            )?;
+        ref op @ Operation::Overclock { .. } => {
+            gpu::overclock::apply(device, op)?;
         }
     };
 
