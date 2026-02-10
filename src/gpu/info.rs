@@ -28,7 +28,7 @@ pub fn show_gpu_info(device: NvmlDevice, device_index: u32) -> Result<()> {
     match get_power_info(device) {
         Ok(info) => {
             println!("power limit: {}W ({}%)", info.limit_watts, info.current_percentage());
-            println!("power range: {}W-{}W", info.min_watts, info.max_watts);
+            println!("power range: {}W-{}W ({}W hard limit)", info.min_watts, info.default_watts, info.max_watts);
         }
         Err(_) => println!("power limit: n/a"),
     }
