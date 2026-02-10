@@ -10,7 +10,7 @@ use crate::gpu::domain::reset_power_limit;
 use crate::nvml::{
     device_reset_gpu_locked_clocks, device_reset_memory_locked_clocks, device_set_clock_offset,
     device_set_gpu_locked_clocks, device_set_memory_vf_offset, NvmlClockType, NvmlDevice,
-    NvmlError, NvmlPerfState, Result,
+    NvmlPerfState, Result,
 };
 use crate::AppError;
 
@@ -54,7 +54,7 @@ pub fn reset_gpu_settings(device: NvmlDevice, dry_run: bool) -> std::result::Res
     ok &= try_reset("power limit", || reset_power_limit(device));
 
     if !ok {
-        return Err(AppError::printed("reset", NvmlError::NotSupported));
+        return Err(AppError::printed("reset"));
     }
 
     Ok(())

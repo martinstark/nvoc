@@ -15,23 +15,26 @@ use nvml::NvmlError;
 
 pub struct AppError {
     domain: &'static str,
-    source: NvmlError,
+    source: Option<NvmlError>,
     printed: bool,
 }
 
 impl AppError {
     pub fn new(domain: &'static str, source: NvmlError) -> Self {
-        Self { domain, source, printed: false }
+        Self { domain, source: Some(source), printed: false }
     }
 
-    pub fn printed(domain: &'static str, source: NvmlError) -> Self {
-        Self { domain, source, printed: true }
+    pub fn printed(domain: &'static str) -> Self {
+        Self { domain, source: None, printed: true }
     }
 }
 
 impl std::fmt::Display for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "error[{}]: {}", self.domain, self.source.user_message())
+        match &self.source {
+            Some(source) => write!(f, "error[{}]: {}", self.domain, source.user_message()),
+            None => write!(f, "error[{}]", self.domain),
+        }
     }
 }
 
