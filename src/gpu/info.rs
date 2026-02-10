@@ -3,7 +3,7 @@
 use crate::gpu::domain::{get_power_info, get_power_usage_watts};
 use crate::nvml::{
     device_get_clock_info, device_get_clock_offsets, device_get_name, device_get_temperature,
-    GpuArchitecture, NvmlClockType, NvmlDevice, Result,
+    NvmlClockType, NvmlDevice, Result,
 };
 
 fn print_field<T: std::fmt::Display>(label: &str, unit: &str, result: Result<T>) {
@@ -15,10 +15,8 @@ fn print_field<T: std::fmt::Display>(label: &str, unit: &str, result: Result<T>)
 
 pub fn show_gpu_info(device: NvmlDevice, device_index: u32) -> Result<()> {
     let name = device_get_name(device)?;
-    let arch = GpuArchitecture::from_device_name(&name);
 
     println!("{}: {}", device_index, name);
-    println!("Arch: {:?}", arch);
 
     print_field("GPU", "MHz", device_get_clock_info(device, NvmlClockType::Graphics));
     print_field("GPU Offset", "MHz", device_get_clock_offsets(device).map(|o| o.clockOffsetMHz));
