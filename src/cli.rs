@@ -21,21 +21,24 @@ fn dry_run_arg() -> Arg {
 }
 
 #[derive(Debug)]
+pub struct OverclockParams {
+    pub clocks: Option<(u32, u32)>,
+    pub graphics_offset: Option<i32>,
+    pub memory_offset: Option<i32>,
+    pub power_limit: Option<u32>,
+    pub dry_run: bool,
+}
+
+#[derive(Debug)]
 pub enum Operation {
     Info,
     Reset { dry_run: bool },
-    Overclock {
-        clocks: Option<(u32, u32)>,
-        graphics_offset: Option<i32>,
-        memory_offset: Option<i32>,
-        power_limit: Option<u32>,
-        dry_run: bool,
-    },
+    Overclock(OverclockParams),
 }
 
 impl Operation {
     pub fn modifies_gpu(&self) -> bool {
-        matches!(self, Operation::Reset { .. } | Operation::Overclock { .. })
+        matches!(self, Operation::Reset { .. } | Operation::Overclock(_))
     }
 }
 
@@ -149,13 +152,13 @@ impl Config {
 
                 Ok(Config {
                     device: *matches.get_one::<u32>("device").unwrap(),
-                    operation: Operation::Overclock {
+                    operation: Operation::Overclock(OverclockParams {
                         clocks,
                         graphics_offset,
                         memory_offset,
                         power_limit,
                         dry_run: matches.get_flag("dry-run"),
-                    },
+                    }),
                 })
             }
         }

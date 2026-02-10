@@ -61,8 +61,8 @@ fn run() -> Result<(), AppError> {
         Operation::Reset { dry_run } => {
             gpu::reset::reset_gpu_settings(device, dry_run)?;
         }
-        ref op @ Operation::Overclock { .. } => {
-            gpu::overclock::apply(device, op)?;
+        Operation::Overclock(ref params) => {
+            gpu::overclock::apply(device, params)?;
         }
     };
 
