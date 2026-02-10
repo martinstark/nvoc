@@ -30,14 +30,6 @@ pub enum NvmlPerfState {
     P0 = 0, // Maximum performance
 }
 
-/// NVML enable state
-#[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
-pub enum NvmlEnableState {
-    #[default]
-    Disabled = 0,
-}
-
 // NVML Return Codes
 pub const NVML_SUCCESS: NvmlReturn = 0;
 pub const NVML_ERROR_UNINITIALIZED: NvmlReturn = 1;

@@ -50,9 +50,6 @@ pub mod cli {
 
 /// Buffer sizes for NVML operations
 pub mod buffers {
-    /// NVML version string buffer size
-    pub const NVML_VERSION_BUFFER_SIZE: usize = 80;
-
     /// Driver version string buffer size
     pub const DRIVER_VERSION_BUFFER_SIZE: usize = 80;
 

@@ -62,18 +62,6 @@ pub fn nvml_shutdown() -> Result<NvmlReturn, crate::nvml::NvmlError> {
     Ok(unsafe { func() })
 }
 
-pub fn nvml_system_get_nvml_version(
-    version: *mut c_char,
-    length: c_uint,
-) -> Result<NvmlReturn, crate::nvml::NvmlError> {
-    let lib = load_nvml_library()?;
-    let func: libloading::Symbol<unsafe extern "C" fn(*mut c_char, c_uint) -> NvmlReturn> = unsafe {
-        lib.get(b"nvmlSystemGetNVMLVersion")
-            .map_err(|_| crate::nvml::NvmlError::FunctionNotFound)?
-    };
-    Ok(unsafe { func(version, length) })
-}
-
 pub fn nvml_system_get_driver_version(
     version: *mut c_char,
     length: c_uint,
