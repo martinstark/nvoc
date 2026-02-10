@@ -24,30 +24,25 @@ impl Drop for CleanupGuard {
 
 pub fn init_nvml() -> Result<()> {
     init()?;
-
     let driver_version = system_get_driver_version()?;
     let major = driver_version
         .split('.')
         .next()
         .and_then(|s| s.parse::<u32>().ok())
         .unwrap_or(0);
-
     if major < hardware::MIN_DRIVER_VERSION {
-        eprintln!(
-            "Driver {} too old, need {}+",
-            driver_version,
-            hardware::MIN_DRIVER_VERSION
-        );
         return Err(crate::nvml::NvmlError::NotSupported);
     }
-
-    println!("Driver {}", driver_version);
     Ok(())
 }
 
 pub fn init_with_cleanup() -> Result<CleanupGuard> {
     init_nvml()?;
     Ok(CleanupGuard)
+}
+
+pub fn driver_version() -> Result<String> {
+    system_get_driver_version()
 }
 
 pub fn get_device(device_index: u32) -> Result<NvmlDevice> {

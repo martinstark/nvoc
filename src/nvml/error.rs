@@ -118,59 +118,34 @@ impl NvmlError {
     /// Get user-friendly error message
     pub fn user_message(&self) -> &'static str {
         match self {
-            Self::Uninitialized => "NVML library not initialized",
-            Self::InvalidArgument => "Invalid argument provided",
-            Self::NotSupported => "Operation not supported by this GPU",
-            Self::NoPermission => "Not root",
-            Self::AlreadyInitialized => "NVML library already initialized",
-            Self::NotFound => "GPU device not found",
-            Self::InsufficientSize => "Buffer size too small",
-            Self::InsufficientPower => "Insufficient power for operation",
-            Self::DriverNotLoaded => "NVIDIA driver not loaded",
-            Self::Timeout => "Operation timed out",
-            Self::IrqIssue => "Hardware interrupt issue",
-            Self::LibraryNotFound => "NVML library not found",
-            Self::FunctionNotFound => "Required function not available",
-            Self::CorruptedInforom => "GPU `InfoROM` corrupted",
-            Self::GpuIsLost => "GPU is lost and requires reset",
-            Self::ResetRequired => "GPU reset required",
-            Self::OperatingSystem => "Operating system error",
-            Self::LibRmVersionMismatch => "Driver version mismatch",
-            Self::InUse => "Resource currently in use",
-            Self::Memory => "Memory allocation failed",
-            Self::NoData => "No data available",
-            Self::VgpuEccNotSupported => "vGPU ECC not supported",
-            Self::InsufficientResources => "Insufficient system resources",
-            Self::FreqNotSupported => "Frequency not supported",
-            Self::ArgumentVersionMismatch => "API version mismatch",
-            Self::Deprecated => "Function deprecated",
-            Self::NotReady => "System not ready",
-            Self::Unknown(_) => "Unknown NVML error",
-        }
-    }
-
-    /// Get actionable error message with specific guidance
-    pub fn actionable_message(&self) -> &'static str {
-        match self {
-            Self::NoPermission => {
-                "Insufficient permissions. Run with root privileges:\n  sudo nvoc <your-options>"
-            }
-            Self::DriverNotLoaded => {
-                "NVIDIA driver not loaded. Install nvidia-open drivers and nvidia-utils package"
-            }
-            Self::LibraryNotFound => {
-                "NVML library not found. Install nvidia-utils package"
-            }
-            Self::NotSupported => {
-                "Operation not supported by this GPU. Check if:\n  1. GPU supports overclocking\n  2. Coolbits are properly configured"
-            }
-            Self::NotFound => {
-                "GPU device not found. Check available devices:\n  nvidia-smi -L"
-            }
-            Self::LibRmVersionMismatch => {
-                "Driver version mismatch. Update packages:\n  sudo pacman -Syu"
-            }
-            _ => self.user_message(),
+            Self::Uninitialized => "nvml not initialized",
+            Self::InvalidArgument => "invalid argument",
+            Self::NotSupported => "not supported by this gpu",
+            Self::NoPermission => "not root, did you forget sudo?",
+            Self::AlreadyInitialized => "nvml already initialized",
+            Self::NotFound => "gpu not found, check nvidia-smi -L",
+            Self::InsufficientSize => "buffer too small",
+            Self::InsufficientPower => "insufficient power",
+            Self::DriverNotLoaded => "driver not loaded, install nvidia-open and nvidia-utils",
+            Self::Timeout => "operation timed out",
+            Self::IrqIssue => "hardware interrupt issue",
+            Self::LibraryNotFound => "nvml not found, install nvidia-utils",
+            Self::FunctionNotFound => "required function not available",
+            Self::CorruptedInforom => "inforom corrupted",
+            Self::GpuIsLost => "gpu lost, reset required",
+            Self::ResetRequired => "gpu reset required",
+            Self::OperatingSystem => "operating system error",
+            Self::LibRmVersionMismatch => "driver mismatch, run sudo pacman -Syu",
+            Self::InUse => "resource in use",
+            Self::Memory => "memory allocation failed",
+            Self::NoData => "no data available",
+            Self::VgpuEccNotSupported => "vgpu ecc not supported",
+            Self::InsufficientResources => "insufficient resources",
+            Self::FreqNotSupported => "frequency not supported",
+            Self::ArgumentVersionMismatch => "api version mismatch",
+            Self::Deprecated => "function deprecated",
+            Self::NotReady => "system not ready",
+            Self::Unknown(_) => "unknown nvml error",
         }
     }
 }
@@ -178,7 +153,7 @@ impl NvmlError {
 impl fmt::Display for NvmlError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Unknown(code) => write!(f, "Unknown NVML error (code: {})", code),
+            Self::Unknown(code) => write!(f, "unknown nvml error (code: {})", code),
             _ => write!(f, "{}", self.user_message()),
         }
     }
