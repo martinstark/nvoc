@@ -20,25 +20,29 @@ fn dry_run_arg() -> Arg {
         .action(clap::ArgAction::SetTrue)
 }
 
-/// Configuration structure for command-line arguments
+#[derive(Debug)]
+pub enum Operation {
+    Info,
+    Reset { dry_run: bool },
+    Overclock {
+        clocks: Option<(u32, u32)>,
+        graphics_offset: Option<i32>,
+        memory_offset: Option<i32>,
+        power_limit: Option<u32>,
+        dry_run: bool,
+    },
+}
+
+impl Operation {
+    pub fn modifies_gpu(&self) -> bool {
+        matches!(self, Operation::Reset { .. } | Operation::Overclock { .. })
+    }
+}
+
 #[derive(Debug)]
 pub struct Config {
-    /// GPU locked clocks (min, max) in MHz
-    pub clocks: Option<(u32, u32)>,
-    /// Graphics clock offset in MHz
-    pub graphics_offset: Option<i32>,
-    /// Memory VF offset in MHz
-    pub memory_offset: Option<i32>,
-    /// Power limit percentage (e.g., 104 for 104%)
-    pub power_limit: Option<u32>,
-    /// Target GPU device index (default: 0)
     pub device: u32,
-    /// Dry run mode (show what would be done)
-    pub dry_run: bool,
-    /// Reset to defaults
-    pub reset: bool,
-    /// Show detailed GPU information
-    pub info: bool,
+    pub operation: Operation,
 }
 
 fn parse_clocks(s: &str) -> std::result::Result<(u32, u32), &'static str> {
@@ -62,7 +66,7 @@ fn parse_clocks(s: &str) -> std::result::Result<(u32, u32), &'static str> {
 }
 
 impl Config {
-    pub fn from_args() -> Self {
+    pub fn from_args() -> Result<Self, clap::Error> {
         let matches = Command::new(app::NAME)
             .version(app::VERSION)
             .author(app::AUTHOR)
@@ -117,53 +121,43 @@ impl Config {
             .arg(dry_run_arg())
             .get_matches();
 
-        // Handle subcommands
         match matches.subcommand() {
-            Some(("reset", sub_matches)) => Config {
-                clocks: None,
-                graphics_offset: None,
-                memory_offset: None,
-                power_limit: None,
+            Some(("reset", sub_matches)) => Ok(Config {
                 device: *sub_matches.get_one::<u32>("device").unwrap(),
-                dry_run: sub_matches.get_flag("dry-run"),
-                reset: true,
-                info: false,
-            },
-            Some(("info", sub_matches)) => Config {
-                clocks: None,
-                graphics_offset: None,
-                memory_offset: None,
-                power_limit: None,
+                operation: Operation::Reset {
+                    dry_run: sub_matches.get_flag("dry-run"),
+                },
+            }),
+            Some(("info", sub_matches)) => Ok(Config {
                 device: *sub_matches.get_one::<u32>("device").unwrap(),
-                dry_run: false,
-                reset: false,
-                info: true,
-            },
-            _ => Config {
-                clocks: matches.get_one::<(u32, u32)>("clocks").copied(),
-                graphics_offset: matches.get_one::<i32>("offset").copied(),
-                memory_offset: matches.get_one::<i32>("memory-offset").copied(),
-                power_limit: matches.get_one::<u32>("power").copied(),
-                device: *matches.get_one::<u32>("device").unwrap(),
-                dry_run: matches.get_flag("dry-run"),
-                reset: false,
-                info: false,
-            },
-        }
-    }
+                operation: Operation::Info,
+            }),
+            _ => {
+                let clocks = matches.get_one::<(u32, u32)>("clocks").copied();
+                let graphics_offset = matches.get_one::<i32>("offset").copied();
+                let memory_offset = matches.get_one::<i32>("memory-offset").copied();
+                let power_limit = matches.get_one::<u32>("power").copied();
 
-    pub fn validate(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // Require at least one operation
-        if self.clocks.is_none()
-            && self.graphics_offset.is_none()
-            && self.memory_offset.is_none()
-            && self.power_limit.is_none()
-            && !self.reset
-            && !self.info
-        {
-            return Err("No operation specified.".into());
-        }
+                if clocks.is_none()
+                    && graphics_offset.is_none()
+                    && memory_offset.is_none()
+                    && power_limit.is_none()
+                {
+                    return Err(Command::new(app::NAME)
+                        .error(clap::error::ErrorKind::MissingRequiredArgument, "No operation specified. Use a subcommand (info, reset) or provide overclock options (-c, -o, -m, -p)."));
+                }
 
-        Ok(())
+                Ok(Config {
+                    device: *matches.get_one::<u32>("device").unwrap(),
+                    operation: Operation::Overclock {
+                        clocks,
+                        graphics_offset,
+                        memory_offset,
+                        power_limit,
+                        dry_run: matches.get_flag("dry-run"),
+                    },
+                })
+            }
+        }
     }
 }
