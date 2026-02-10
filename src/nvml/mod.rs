@@ -82,8 +82,11 @@ pub fn device_get_name(device: NvmlDevice) -> Result<String> {
     }
 }
 
-pub fn device_get_clock_offsets(device: NvmlDevice) -> Result<NvmlClockOffset> {
-    let mut offset = NvmlClockOffset::new_v1(NvmlClockType::Graphics, NvmlPerfState::P0, 0);
+pub fn device_get_clock_offsets(
+    device: NvmlDevice,
+    clock_type: NvmlClockType,
+) -> Result<NvmlClockOffset> {
+    let mut offset = NvmlClockOffset::new_v1(clock_type, NvmlPerfState::P0, 0);
     let result = loader::nvml_device_get_clock_offsets(device, &mut offset)?;
     if result != NVML_SUCCESS {
         return Err(NvmlError::from_nvml_return(result));
