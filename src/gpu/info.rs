@@ -13,6 +13,8 @@ fn print_field<T: std::fmt::Display>(label: &str, unit: &str, result: Result<T>)
     }
 }
 
+/// Display GPU info. Only device name is required; individual fields
+/// degrade to "n/a" on error via print_field.
 pub fn show_gpu_info(device: NvmlDevice, device_index: u32) -> Result<()> {
     let name = device_get_name(device)?;
     println!("gpu {device_index}: {name}");
