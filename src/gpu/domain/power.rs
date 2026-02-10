@@ -52,15 +52,6 @@ pub fn get_power_info(device: NvmlDevice) -> Result<PowerInfo> {
     })
 }
 
-/// Set power limit by percentage of default
-pub fn set_power_limit_percentage(device: NvmlDevice, percentage: u32) -> Result<()> {
-    let power_info = get_power_info(device)?;
-    let target_watts = power_info.effective_watts_from_percentage(percentage);
-    let target_mw = w_to_mw(target_watts);
-
-    nvml::device_set_power_limit(device, target_mw)
-}
-
 /// Get current power usage in watts
 pub fn get_power_usage_watts(device: NvmlDevice) -> Result<u32> {
     let power_mw = nvml::device_get_power_usage(device)?;
