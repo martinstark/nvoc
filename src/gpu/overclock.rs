@@ -1,6 +1,5 @@
 //! GPU overclocking operations
 
-use crate::cli::Config;
 use crate::gpu::power::apply_power_limit;
 use crate::nvml::{
     device_set_clock_offset, device_set_gpu_locked_clocks, device_set_memory_vf_offset,
@@ -63,21 +62,28 @@ pub fn apply_memory_offset(device: NvmlDevice, offset: i32, dry_run: bool) -> Re
     }
 }
 
-pub fn apply(device: NvmlDevice, config: &Config) -> Result<()> {
-    if let Some(clocks) = config.clocks {
-        apply_clocks(device, clocks, config.dry_run)?;
+pub fn apply(
+    device: NvmlDevice,
+    clocks: Option<(u32, u32)>,
+    graphics_offset: Option<i32>,
+    memory_offset: Option<i32>,
+    power_limit: Option<u32>,
+    dry_run: bool,
+) -> Result<()> {
+    if let Some(clocks) = clocks {
+        apply_clocks(device, clocks, dry_run)?;
     }
 
-    if let Some(offset) = config.graphics_offset {
-        apply_graphics_offset(device, offset, config.dry_run)?;
+    if let Some(offset) = graphics_offset {
+        apply_graphics_offset(device, offset, dry_run)?;
     }
 
-    if let Some(offset) = config.memory_offset {
-        apply_memory_offset(device, offset, config.dry_run)?;
+    if let Some(offset) = memory_offset {
+        apply_memory_offset(device, offset, dry_run)?;
     }
 
-    if let Some(percentage) = config.power_limit {
-        apply_power_limit(device, percentage, config.dry_run)?;
+    if let Some(percentage) = power_limit {
+        apply_power_limit(device, percentage, dry_run)?;
     }
 
     Ok(())
