@@ -186,14 +186,3 @@ impl fmt::Display for NvmlError {
 }
 
 impl std::error::Error for NvmlError {}
-
-/// Helper macro for checking NVML return codes
-#[macro_export]
-macro_rules! nvml_try {
-    ($expr:expr) => {{
-        let result = $expr;
-        if result != NVML_SUCCESS {
-            return Err(NvmlError::from_nvml_return(result));
-        }
-    }};
-}

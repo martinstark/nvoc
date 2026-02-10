@@ -24,8 +24,6 @@ fn run() -> AppResult<()> {
         || config.power_limit.is_some()
     {
         gpu::validation::check_system_for_modification()?;
-    } else {
-        gpu::validation::check_system_for_read()?;
     }
 
     // Initialize NVML with automatic cleanup

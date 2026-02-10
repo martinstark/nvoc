@@ -3,9 +3,9 @@
 use crate::constants::clocks;
 use crate::gpu::domain::reset_power_limit;
 use crate::nvml::{
-    device_get_name, device_reset_gpu_locked_clocks, device_reset_memory_locked_clocks,
-    device_set_clock_offset, device_set_gpu_locked_clocks, device_set_memory_vf_offset,
-    system_get_driver_version, GpuArchitecture, NvmlClockType, NvmlDevice, NvmlPerfState, Result,
+    device_reset_gpu_locked_clocks, device_reset_memory_locked_clocks, device_set_clock_offset,
+    device_set_gpu_locked_clocks, device_set_memory_vf_offset, system_get_driver_version,
+    NvmlClockType, NvmlDevice, NvmlPerfState, Result,
 };
 
 pub fn reset_gpu_settings(device: NvmlDevice, dry_run: bool) -> Result<()> {
@@ -18,9 +18,6 @@ pub fn reset_gpu_settings(device: NvmlDevice, dry_run: bool) -> Result<()> {
     let mut failed_operations = Vec::new();
 
     // Reset GPU locked clocks - set to idle range first for Blackwell
-    let device_name = device_get_name(device)?;
-    let _arch = GpuArchitecture::from_device_name(&device_name);
-
     // For Blackwell, explicitly set to idle range then reset
     let _ = device_set_gpu_locked_clocks(
         device,

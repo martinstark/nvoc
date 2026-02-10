@@ -24,8 +24,3 @@ pub fn check_system_for_modification() -> Result<()> {
 
     Ok(())
 }
-
-/// Check system requirements for read-only operations
-pub fn check_system_for_read() -> Result<()> {
-    Ok(())
-}

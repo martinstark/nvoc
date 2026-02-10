@@ -33,21 +33,6 @@ pub fn shutdown() -> Result<()> {
     Ok(())
 }
 
-pub fn system_get_nvml_version() -> Result<String> {
-    let mut version = [0i8; buffers::NVML_VERSION_BUFFER_SIZE];
-    let result = loader::nvml_system_get_nvml_version(
-        version.as_mut_ptr(),
-        buffers::NVML_VERSION_BUFFER_SIZE as c_uint,
-    )?;
-    if result != NVML_SUCCESS {
-        return Err(NvmlError::from_nvml_return(result));
-    }
-    unsafe {
-        let c_str = CStr::from_ptr(version.as_ptr());
-        Ok(c_str.to_string_lossy().to_string())
-    }
-}
-
 pub fn system_get_driver_version() -> Result<String> {
     let mut version = [0i8; buffers::DRIVER_VERSION_BUFFER_SIZE];
     let result = loader::nvml_system_get_driver_version(
