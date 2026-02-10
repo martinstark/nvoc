@@ -16,6 +16,14 @@ Born out of my frustration with the lack of an API that is both easy to use in t
 
 ## Install
 
+### AUR (Arch Linux)
+
+```bash
+paru -S nvoc-cli
+```
+
+### From source
+
 ```bash
 # Install dependencies (Arch Linux)
 sudo pacman -S nvidia-open nvidia-utils
