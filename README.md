@@ -81,14 +81,14 @@ Power limits are percentages of the GPU's default power limit. Hardware enforces
 
 ```
 $ nvoc info
-Driver 580.82.09
+Driver 590.48.01
 0: NVIDIA GeForce RTX 5090
 Blackwell v16777240
-GPU: 1177MHz
-GPU Offset: 960MHz
-Mem: 15501MHz
-Temp: 56°C
-Power: 45W
+GPU: 1080MHz
+GPU Offset: 856MHz
+Mem: 405MHz
+Temp: 44°C
+Power: 14W
 Power Limit: 600W (104% of default)
 Power Range: 400W-575W (hard limit: 600W)
 ```
