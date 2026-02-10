@@ -4,8 +4,6 @@ GPU overclocking/undervolting utility for Blackwell RTX 50-series on Linux.
 
 Born out of my frustration with the lack of an API that is both easy to use in the terminal, and easy to script around.
 
-**WARNING: Overclocking may damage hardware.**
-
 ## Requirements
 
 - Linux x86_64
@@ -35,8 +33,6 @@ sudo cp target/release/nvoc /usr/local/bin/
 
 ## Usage
 
-### Commands
-
 ```bash
 # Show GPU information
 nvoc info
@@ -60,14 +56,8 @@ nvoc -c 200,2800 --dry-run
 - `-d, --device <INDEX>` - GPU device index (default: 0)
 - `--dry-run` - Preview changes only
 
-### Commands
+### Examples
 
-- `info`
-- `reset`
-
-## Examples
-
-### Overclocking or Undervolting
 ```bash
 # 5090 uv example
 sudo nvoc -c 200,2820 -o 856 -m 2000 -p 105
@@ -85,18 +75,11 @@ sudo nvoc -p 105
 sudo nvoc -c 200,2800
 ```
 
-## Power Management
+Power limits are percentages of the GPU's default power limit. Hardware enforces absolute min/max constraints regardless of percentage.
 
-Power limits are specified as percentages of the GPU's default power limit:
+### Info
 
-- **100%**: default hardware power limit
-- **110%**: 10% increase over default
-
-Hardware enforces absolute min/max constraints regardless of percentage.
-
-## Info Command Output
-
-```bash
+```
 $ nvoc info
 Driver 580.82.09
 0: NVIDIA GeForce RTX 5090
@@ -110,20 +93,12 @@ Power Limit: 600W (104% of default)
 Power Range: 400W-575W (hard limit: 600W)
 ```
 
-## Limitations
-
-### Voltage Curve Offsets
-
-The NVML API only supports global clock offsets, not per-voltage point adjustments. This means:
-
-- Offsets apply uniformly across all voltage points on the GPU's voltage/frequency curve
-- Fine-grained undervolting (setting specific voltage for specific frequency) is not possible
-- Tools like MSI Afterburner's curve editor provide more granular control via a non-public API
-
-This is a hardware abstraction layer limitation, not specific to `nvoc`.
-
-## Monitor
+### Monitor
 
 ```bash
 watch -n 1 nvoc info
 ```
+
+## Limitations
+
+The NVML API only supports global clock offsets, not per-voltage-point adjustments. Fine-grained undervolting (setting a specific frequency at a specific voltage) is not possible. Tools like MSI Afterburner achieve this through a non-public API. This is an NVML limitation, not specific to `nvoc`.
