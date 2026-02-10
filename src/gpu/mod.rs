@@ -22,21 +22,22 @@ impl Drop for CleanupGuard {
     }
 }
 
-pub fn init_nvml() -> Result<()> {
-    init()?;
-    let driver_version = system_get_driver_version()?;
+pub fn init_nvml() -> std::result::Result<(), crate::AppError> {
+    init().map_err(|e| crate::AppError::new("driver", e))?;
+    let driver_version = system_get_driver_version()
+        .map_err(|e| crate::AppError::new("driver", e))?;
     let major: u32 = driver_version
         .split('.')
         .next()
         .and_then(|s| s.parse().ok())
-        .ok_or(crate::nvml::NvmlError::InvalidArgument)?;
+        .ok_or_else(|| crate::AppError::msg("driver", format!("unparseable version: {driver_version}")))?;
     if major < hardware::MIN_DRIVER_VERSION {
-        return Err(crate::nvml::NvmlError::NotSupported);
+        return Err(crate::AppError::msg("driver", format!("version {driver_version} too old, need {}+", hardware::MIN_DRIVER_VERSION)));
     }
     Ok(())
 }
 
-pub fn init_with_cleanup() -> Result<CleanupGuard> {
+pub fn init_with_cleanup() -> std::result::Result<CleanupGuard, crate::AppError> {
     init_nvml()?;
     Ok(CleanupGuard)
 }

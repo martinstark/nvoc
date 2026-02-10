@@ -16,24 +16,30 @@ use nvml::NvmlError;
 pub struct AppError {
     domain: &'static str,
     source: Option<NvmlError>,
+    message: Option<String>,
     printed: bool,
 }
 
 impl AppError {
     pub fn new(domain: &'static str, source: NvmlError) -> Self {
-        Self { domain, source: Some(source), printed: false }
+        Self { domain, source: Some(source), message: None, printed: false }
+    }
+
+    pub fn msg(domain: &'static str, message: String) -> Self {
+        Self { domain, source: None, message: Some(message), printed: false }
     }
 
     pub fn printed(domain: &'static str) -> Self {
-        Self { domain, source: None, printed: true }
+        Self { domain, source: None, message: None, printed: true }
     }
 }
 
 impl std::fmt::Display for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match &self.source {
-            Some(source) => write!(f, "error[{}]: {}", self.domain, source.user_message()),
-            None => write!(f, "error[{}]", self.domain),
+        match (&self.source, &self.message) {
+            (Some(source), _) => write!(f, "error[{}]: {}", self.domain, source.user_message()),
+            (_, Some(msg)) => write!(f, "error[{}]: {}", self.domain, msg),
+            _ => write!(f, "error[{}]", self.domain),
         }
     }
 }
@@ -46,7 +52,7 @@ fn run() -> Result<(), AppError> {
             .map_err(|e| AppError::new("nvoc", e))?;
     }
 
-    let _cleanup = gpu::init_with_cleanup().map_err(|e| AppError::new("driver", e))?;
+    let _cleanup = gpu::init_with_cleanup()?;
     let device = gpu::get_device(config.device).map_err(|e| AppError::new("device", e))?;
     gpu::validation::validate_blackwell_architecture(device)
         .map_err(|e| AppError::new("gpu", e))?;
