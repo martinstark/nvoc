@@ -6,6 +6,13 @@ use crate::nvml::{
     GpuArchitecture, NvmlClockType, NvmlDevice, Result,
 };
 
+fn print_field<T: std::fmt::Display>(label: &str, unit: &str, result: Result<T>) {
+    match result {
+        Ok(val) => println!("{}: {}{}", label, val, unit),
+        Err(_) => println!("{}: N/A", label),
+    }
+}
+
 pub fn show_gpu_info(device: NvmlDevice, device_index: u32) -> Result<()> {
     let name = device_get_name(device)?;
     let arch = GpuArchitecture::from_device_name(&name);
@@ -13,30 +20,11 @@ pub fn show_gpu_info(device: NvmlDevice, device_index: u32) -> Result<()> {
     println!("{}: {}", device_index, name);
     println!("Arch: {:?}", arch);
 
-    match device_get_clock_info(device, NvmlClockType::Graphics) {
-        Ok(clock) => println!("GPU: {}MHz", clock),
-        Err(_) => println!("GPU: N/A"),
-    }
-
-    match device_get_clock_offsets(device) {
-        Ok(offset) => println!("GPU Offset: {}MHz", offset.clockOffsetMHz),
-        Err(_) => println!("GPU Offset: N/A"),
-    }
-
-    match device_get_clock_info(device, NvmlClockType::Memory) {
-        Ok(clock) => println!("Mem: {}MHz", clock),
-        Err(_) => println!("Mem: N/A"),
-    }
-
-    match device_get_temperature(device) {
-        Ok(temp) => println!("Temp: {}°C", temp),
-        Err(_) => println!("Temp: N/A"),
-    }
-
-    match get_power_usage_watts(device) {
-        Ok(power_watts) => println!("Power: {}W", power_watts),
-        Err(_) => println!("Power: N/A"),
-    }
+    print_field("GPU", "MHz", device_get_clock_info(device, NvmlClockType::Graphics));
+    print_field("GPU Offset", "MHz", device_get_clock_offsets(device).map(|o| o.clockOffsetMHz));
+    print_field("Mem", "MHz", device_get_clock_info(device, NvmlClockType::Memory));
+    print_field("Temp", "°C", device_get_temperature(device));
+    print_field("Power", "W", get_power_usage_watts(device));
 
     match get_power_info(device) {
         Ok(power_info) => {
