@@ -34,7 +34,10 @@ pub fn apply_graphics_offset(device: NvmlDevice, offset: i32, dry_run: bool) -> 
     }
 
     match device_set_clock_offset(device, NvmlClockType::Graphics, NvmlPerfState::P0, offset) {
-        Ok(_) => Ok(()),
+        Ok(_) => {
+            println!("Graphics offset: {}MHz", offset);
+            Ok(())
+        }
         Err(e) => {
             eprintln!("Graphics offset failed: {}", e.actionable_message());
             Err(e)
