@@ -57,10 +57,6 @@ nvoc -c 200,2800 --dry-run
 - `info`
 - `reset`
 
-## Limitations
-
-
-
 ## Examples
 
 ### Overclocking or Undervolting
