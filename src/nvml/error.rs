@@ -1,6 +1,5 @@
 //! NVML error handling
 
-use crate::constants::errors;
 use crate::nvml::types::{
     NvmlReturn, NVML_ERROR_ALREADY_INITIALIZED, NVML_ERROR_ARGUMENT_VERSION_MISMATCH,
     NVML_ERROR_CORRUPTED_INFOROM, NVML_ERROR_DEPRECATED, NVML_ERROR_DRIVER_NOT_LOADED,
@@ -111,7 +110,7 @@ impl NvmlError {
             NVML_ERROR_ARGUMENT_VERSION_MISMATCH => Self::ArgumentVersionMismatch,
             NVML_ERROR_DEPRECATED => Self::Deprecated,
             NVML_ERROR_NOT_READY => Self::NotReady,
-            NVML_ERROR_UNKNOWN => Self::Unknown(errors::NVML_UNKNOWN_ERROR_CODE),
+            NVML_ERROR_UNKNOWN => Self::Unknown(999),
             code => Self::Unknown(code),
         }
     }

@@ -4,7 +4,7 @@
 //! unit conversions, percentage calculations, and validation.
 //! It provides a clean interface over raw NVML power operations.
 
-use crate::constants::{hardware, power};
+use crate::constants::hardware;
 use crate::nvml::{self, NvmlDevice, Result};
 
 /// Power information for a GPU device
@@ -23,12 +23,12 @@ pub struct PowerInfo {
 impl PowerInfo {
     /// Get current power limit as percentage of default
     pub fn current_percentage(&self) -> u32 {
-        (self.limit_watts as f32 / self.default_watts as f32 * power::POWER_PRECISION) as u32
+        (self.limit_watts as f32 / self.default_watts as f32 * 100.0) as u32
     }
 
     /// Calculate watts from percentage of default
     pub fn calculate_watts_from_percentage(&self, percentage: u32) -> u32 {
-        (self.default_watts as f32 * percentage as f32 / power::POWER_PRECISION) as u32
+        (self.default_watts as f32 * percentage as f32 / 100.0) as u32
     }
 
     /// Get the effective watts that would be set (clamped to hardware limits)
