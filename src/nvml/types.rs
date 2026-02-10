@@ -125,13 +125,6 @@ impl GpuArchitecture {
         }
     }
 
-    /// Get struct version for clock offsets (Blackwell uses v1)
-    pub fn get_clock_offset_version(&self) -> u32 {
-        match self {
-            GpuArchitecture::Blackwell => NVML_CLOCK_OFFSET_V1,
-            GpuArchitecture::Unknown => NVML_CLOCK_OFFSET_V1, // Default to Blackwell version
-        }
-    }
 }
 
 impl std::fmt::Display for NvmlClockType {
@@ -173,18 +166,6 @@ mod tests {
         assert_eq!(
             GpuArchitecture::from_device_name("GeForce RTX 5060"),
             GpuArchitecture::Blackwell
-        );
-    }
-
-    #[test]
-    fn test_version_selection() {
-        assert_eq!(
-            GpuArchitecture::Blackwell.get_clock_offset_version(),
-            NVML_CLOCK_OFFSET_V1
-        );
-        assert_eq!(
-            GpuArchitecture::Unknown.get_clock_offset_version(),
-            NVML_CLOCK_OFFSET_V1
         );
     }
 

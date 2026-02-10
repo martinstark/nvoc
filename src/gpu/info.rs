@@ -11,7 +11,7 @@ pub fn show_gpu_info(device: NvmlDevice, device_index: u32) -> Result<()> {
     let arch = GpuArchitecture::from_device_name(&name);
 
     println!("{}: {}", device_index, name);
-    println!("{:?} v{}", arch, arch.get_clock_offset_version());
+    println!("Arch: {:?}", arch);
 
     match device_get_clock_info(device, NvmlClockType::Graphics) {
         Ok(clock) => println!("GPU: {}MHz", clock),
