@@ -20,8 +20,9 @@ pub fn show_gpu_info(device: NvmlDevice, device_index: u32) -> Result<()> {
     println!("gpu {device_index}: {name}");
 
     print_field("gpu clock", "MHz", device_get_clock_info(device, NvmlClockType::Graphics));
-    print_field("gpu offset", "MHz", device_get_clock_offsets(device).map(|o| o.clockOffsetMHz));
+    print_field("gpu offset", "MHz", device_get_clock_offsets(device, NvmlClockType::Graphics).map(|o| o.clockOffsetMHz));
     print_field("mem clock", "MHz", device_get_clock_info(device, NvmlClockType::Memory));
+    print_field("mem offset", "MHz", device_get_clock_offsets(device, NvmlClockType::Memory).map(|o| o.clockOffsetMHz));
     print_field("temp", "°C", device_get_temperature(device));
     print_field("power", "W", get_power_usage_watts(device));
 
