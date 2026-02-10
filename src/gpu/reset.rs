@@ -1,87 +1,60 @@
 //! GPU reset operations
+//!
+//! Unlike other operations that bail on first error, reset attempts all
+//! operations and reports individual failures. Errors are printed at the
+//! call site rather than bubbled up because the caller needs to see each
+//! failure as it continues through remaining operations.
 
 use crate::constants::clocks;
 use crate::gpu::domain::reset_power_limit;
 use crate::nvml::{
     device_reset_gpu_locked_clocks, device_reset_memory_locked_clocks, device_set_clock_offset,
-    device_set_gpu_locked_clocks, device_set_memory_vf_offset, system_get_driver_version,
-    NvmlClockType, NvmlDevice, NvmlPerfState, Result,
+    device_set_gpu_locked_clocks, device_set_memory_vf_offset, NvmlClockType, NvmlDevice,
+    NvmlError, NvmlPerfState, Result,
 };
+use crate::AppError;
 
-fn try_reset<'a>(label: &'a str, succeeded: &mut Vec<&'a str>, f: impl FnOnce() -> Result<()>) -> bool {
+fn try_reset(domain: &str, f: impl FnOnce() -> Result<()>) -> bool {
     match f() {
-        Ok(_) => {
-            succeeded.push(label);
-            true
-        }
-        Err(e) => {
-            eprintln!("{} failed: {}", label, e.actionable_message());
-            false
-        }
+        Ok(()) => { println!("{domain}: reset"); true }
+        Err(e) => { eprintln!("error[{domain}]: {}", e.user_message()); false }
     }
 }
 
-pub fn reset_gpu_settings(device: NvmlDevice, dry_run: bool) -> Result<()> {
+pub fn reset_gpu_settings(device: NvmlDevice, dry_run: bool) -> std::result::Result<(), AppError> {
     if dry_run {
-        println!("[DRY] Reset");
+        println!("reset: all (dry run)");
         return Ok(());
     }
 
-    let mut failed = false;
-    let mut succeeded = Vec::new();
+    let mut ok = true;
 
-    // Set to idle range before resetting locked clocks (required for Blackwell)
-    if try_reset("Idle clocks pre-set", &mut succeeded, || {
-        device_set_gpu_locked_clocks(device, clocks::BLACKWELL_IDLE_MIN, clocks::BLACKWELL_IDLE_MAX)
-    }) {
-        if !try_reset("GPU locked clocks", &mut succeeded, || {
-            device_reset_gpu_locked_clocks(device)
-        }) {
-            failed = true;
-        }
+    // Blackwell requires setting idle clocks before reset will succeed
+    let idle_ok = device_set_gpu_locked_clocks(device, clocks::BLACKWELL_IDLE_MIN, clocks::BLACKWELL_IDLE_MAX).is_ok();
+    if idle_ok {
+        ok &= try_reset("gpu clocks", || device_reset_gpu_locked_clocks(device));
     } else {
-        failed = true;
+        eprintln!("error[gpu clocks]: failed to set idle clocks for reset");
+        ok = false;
     }
 
-    if !try_reset("Memory locked clocks", &mut succeeded, || {
-        device_reset_memory_locked_clocks(device)
+    ok &= try_reset("mem clocks", || device_reset_memory_locked_clocks(device));
+
+    if !try_reset("gpu offset", || {
+        device_set_clock_offset(device, NvmlClockType::Graphics, NvmlPerfState::P0, clocks::DEFAULT_GRAPHICS_OFFSET)
     }) {
-        failed = true;
+        eprintln!("  hint: clocks may remain elevated, try sudo nvoc -o 0");
+        ok = false;
     }
 
-    if !try_reset("Graphics offset", &mut succeeded, || {
-        device_set_clock_offset(
-            device,
-            NvmlClockType::Graphics,
-            NvmlPerfState::P0,
-            clocks::DEFAULT_GRAPHICS_OFFSET,
-        )
-    }) {
-        eprintln!(
-            "Driver: {}",
-            system_get_driver_version().unwrap_or_else(|_| "unknown".to_owned())
-        );
-        eprintln!("Clocks may remain elevated due to active graphics offset");
-        eprintln!("Manual reset: sudo nvoc -o 0");
-        failed = true;
-    }
-
-    if !try_reset("Memory VF offset", &mut succeeded, || {
+    ok &= try_reset("mem offset", || {
         device_set_memory_vf_offset(device, clocks::DEFAULT_MEMORY_OFFSET)
-    }) {
-        failed = true;
-    }
+    });
 
-    if !try_reset("Power limit", &mut succeeded, || reset_power_limit(device)) {
-        failed = true;
-    }
+    ok &= try_reset("power limit", || reset_power_limit(device));
 
-    if !succeeded.is_empty() {
-        println!("Reset: {}", succeeded.join(", "));
-    }
-
-    if failed {
-        return Err(crate::nvml::NvmlError::NotSupported);
+    if !ok {
+        return Err(AppError::printed("reset", NvmlError::NotSupported));
     }
 
     Ok(())

@@ -1,4 +1,4 @@
-//! GPU information operations
+//! GPU information display
 
 use crate::gpu::domain::{get_power_info, get_power_usage_watts};
 use crate::nvml::{
@@ -8,35 +8,27 @@ use crate::nvml::{
 
 fn print_field<T: std::fmt::Display>(label: &str, unit: &str, result: Result<T>) {
     match result {
-        Ok(val) => println!("{}: {}{}", label, val, unit),
-        Err(_) => println!("{}: N/A", label),
+        Ok(val) => println!("{label}: {val}{unit}"),
+        Err(_) => println!("{label}: n/a"),
     }
 }
 
 pub fn show_gpu_info(device: NvmlDevice, device_index: u32) -> Result<()> {
     let name = device_get_name(device)?;
+    println!("gpu {device_index}: {name}");
 
-    println!("{}: {}", device_index, name);
-
-    print_field("GPU", "MHz", device_get_clock_info(device, NvmlClockType::Graphics));
-    print_field("GPU Offset", "MHz", device_get_clock_offsets(device).map(|o| o.clockOffsetMHz));
-    print_field("Mem", "MHz", device_get_clock_info(device, NvmlClockType::Memory));
-    print_field("Temp", "°C", device_get_temperature(device));
-    print_field("Power", "W", get_power_usage_watts(device));
+    print_field("gpu clock", "MHz", device_get_clock_info(device, NvmlClockType::Graphics));
+    print_field("gpu offset", "MHz", device_get_clock_offsets(device).map(|o| o.clockOffsetMHz));
+    print_field("mem clock", "MHz", device_get_clock_info(device, NvmlClockType::Memory));
+    print_field("temp", "°C", device_get_temperature(device));
+    print_field("power", "W", get_power_usage_watts(device));
 
     match get_power_info(device) {
-        Ok(power_info) => {
-            print!("Power Limit: {}W", power_info.limit_watts);
-            let percentage = power_info.current_percentage();
-            print!(" ({}% of default)", percentage);
-            println!();
-
-            println!(
-                "Power Range: {}W-{}W (hard limit: {}W)",
-                power_info.min_watts, power_info.default_watts, power_info.max_watts
-            );
+        Ok(info) => {
+            println!("power limit: {}W ({}%)", info.limit_watts, info.current_percentage());
+            println!("power range: {}W-{}W", info.min_watts, info.max_watts);
         }
-        Err(_) => println!("Power Limit: N/A"),
+        Err(_) => println!("power limit: n/a"),
     }
 
     Ok(())
