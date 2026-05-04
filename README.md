@@ -98,6 +98,31 @@ power range: 400W-575W (600W hard limit)
 watch -n 1 nvoc info
 ```
 
+### Apply on Boot (systemd)
+
+To apply settings on every boot, install a oneshot service:
+
+```ini
+# /etc/systemd/system/gpu-oc.service
+[Unit]
+Description=GPU overclock settings
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/nvoc -c 200,2820 -o 856 -m 2000 -p 105
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now gpu-oc.service
+```
+
+Replace the `ExecStart` arguments with your tuned values. Adjust the binary path to `/usr/local/bin/nvoc` if you installed from source.
+
 ## Limitations
 
 The NVML API only supports global clock offsets, not per-voltage-point adjustments. Fine-grained undervolting (setting a specific frequency at a specific voltage) is not possible. Tools like MSI Afterburner achieve this through a non-public API. This is an NVML limitation, not specific to `nvoc`.
