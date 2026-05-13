@@ -82,6 +82,41 @@ pub fn device_get_name(device: NvmlDevice) -> Result<String> {
     }
 }
 
+pub fn device_get_uuid(device: NvmlDevice) -> Result<String> {
+    let mut uuid = [0i8; buffers::DEVICE_UUID_BUFFER_SIZE];
+    let result = loader::nvml_device_get_uuid(
+        device,
+        uuid.as_mut_ptr(),
+        buffers::DEVICE_UUID_BUFFER_SIZE as c_uint,
+    )?;
+    if result != NVML_SUCCESS {
+        return Err(NvmlError::from_nvml_return(result));
+    }
+    unsafe {
+        let c_str = CStr::from_ptr(uuid.as_ptr());
+        Ok(c_str.to_string_lossy().to_string())
+    }
+}
+
+pub fn device_get_handle_by_uuid(uuid: &str) -> Result<NvmlDevice> {
+    let c_uuid = std::ffi::CString::new(uuid).map_err(|_| NvmlError::InvalidArgument)?;
+    let mut device: NvmlDevice = ptr::null_mut();
+    let result = loader::nvml_device_get_handle_by_uuid(c_uuid.as_ptr(), &mut device)?;
+    if result != NVML_SUCCESS {
+        return Err(NvmlError::from_nvml_return(result));
+    }
+    Ok(device)
+}
+
+pub fn device_get_index(device: NvmlDevice) -> Result<u32> {
+    let mut index: c_uint = 0;
+    let result = loader::nvml_device_get_index(device, &mut index)?;
+    if result != NVML_SUCCESS {
+        return Err(NvmlError::from_nvml_return(result));
+    }
+    Ok(index)
+}
+
 pub fn device_get_clock_offsets(
     device: NvmlDevice,
     clock_type: NvmlClockType,

@@ -37,6 +37,9 @@ sudo cp target/release/nvoc /usr/local/bin/
 # Show GPU information
 nvoc info
 
+# List visible GPUs
+nvoc list
+
 # OC
 sudo nvoc -c MIN,MAX -o OFFSET -m MEM_OFFSET -p POWER_LIMIT
 
@@ -49,16 +52,20 @@ nvoc -c 200,2800 --dry-run
 
 ### Options
 
-- `-c, --clocks <MIN,MAX>` - Set GPU locked clocks (MHz)
+- `-c, --clocks <MIN,MAX>` - GPU locked clocks (MHz)
 - `-o, --offset <OFFSET>` - Graphics clock offset (MHz)
 - `-m, --memory-offset <OFFSET>` - Memory clock offset (MHz)
-- `-p, --power <PERCENT>` - Power limit percentage (50-150%)
-- `-d, --device <INDEX>` - GPU device index (default: 0)
-- `--dry-run` - Preview changes only
+- `-p, --power <50-150>` - Power limit percentage
+- `-d, --device <index | uuid | all>` 
+- `--json` - Emit JSON output (info, list)
+- `--uuid` - Emit device UUIDs separated by line break (list)
+- `--dry-run` - Preview changes
 
 ### Examples
 
 ```bash
+# SINGLE GPU
+
 # 5090 uv example
 sudo nvoc -c 200,2820 -o 856 -m 2000 -p 105
 
@@ -75,21 +82,55 @@ sudo nvoc -p 105
 sudo nvoc -c 200,2800
 ```
 
-Power limits are percentages of the GPU's default power limit. Hardware enforces absolute min/max constraints regardless of percentage.
+```bash
+# MULTI GPU
+
+# Apply to all visible GPUs
+sudo nvoc -d all -o 200
+
+# Using Device ID (unstable across reboots)
+sudo nvoc -d 0,1 -c 200,2820 -o 856 -m 2000 -p 105
+
+# Using UUID (stable across reboots)
+sudo nvoc -d GPU-1234... -o 856
+```
+
+Power limits are percentages of the GPU's default power limit. Bios enforces absolute min/max constraints regardless of percentage.
 
 ### Info
 
 ```
 $ nvoc info
-driver: 590.48.01
+driver: 595.71.05
 gpu 0: NVIDIA GeForce RTX 5090
-gpu clock: 1072MHz
+gpu clock: 1080MHz
 gpu offset: 856MHz
-mem clock: 405MHz
-temp: 44°C
-power: 14W
+mem clock: 810MHz
+mem offset: 2000MHz
+temp: 52°C
+power: 28W
 power limit: 600W (104%)
 power range: 400W-575W (600W hard limit)
+```
+
+```bash
+# JSON
+nvoc info --json
+```
+
+### List
+
+```
+$ nvoc list
+0 - NVIDIA GeForce RTX 5090 - GPU-1234...
+```
+
+```bash
+# UUIDs only, separated by line break, no labels
+nvoc list --uuid
+
+# JSON
+nvoc list --json
 ```
 
 ### Monitor
@@ -122,6 +163,8 @@ sudo systemctl enable --now gpu-oc.service
 ```
 
 Replace the `ExecStart` arguments with your tuned values. Adjust the binary path to `/usr/local/bin/nvoc` if you installed from source.
+
+On multi-GPU systems, pin by UUID with `-d`. NVML device indices aren't guaranteed stable across reboots.
 
 ## Limitations
 
