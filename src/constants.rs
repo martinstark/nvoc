@@ -40,4 +40,7 @@ pub mod buffers {
 
     /// Device name buffer size
     pub const DEVICE_NAME_BUFFER_SIZE: usize = 64;
+
+    /// UUID string buffer size (NVML_DEVICE_UUID_V2_BUFFER_SIZE = 96)
+    pub const DEVICE_UUID_BUFFER_SIZE: usize = 96;
 }
