@@ -56,7 +56,7 @@ nvoc -c 200,2800 --dry-run
 - `-o, --offset <OFFSET>` - Graphics clock offset (MHz)
 - `-m, --memory-offset <OFFSET>` - Memory clock offset (MHz)
 - `-p, --power <50-150>` - Power limit percentage
-- `-d, --device <index | uuid | name:pattern | all>` - GPU device selector
+- `-d, --device <index | uuid | name:pattern | regex:pattern | all>` - GPU device selector
 - `--json` - Emit JSON output (info, list)
 - `--uuid` - Emit device UUIDs separated by line break (list)
 - `--dry-run` - Preview changes
@@ -97,6 +97,11 @@ sudo nvoc -d GPU-1234... -o 856
 # Using name pattern (case-insensitive substring match on device name)
 sudo nvoc -d name:5090 -o 856
 sudo nvoc -d "n:5060 Ti" -o 100
+
+# Using a regex pattern (case-sensitive regex search on device name)
+sudo nvoc -d "regex:RTX 50[89]0" -o 856
+# Optional ' Ti' suffix - matches both "RTX 5060" and "RTX 5060 Ti"
+sudo nvoc -d "r:5060( Ti)?" -o 100
 ```
 
 Power limits are percentages of the GPU's default power limit. Bios enforces absolute min/max constraints regardless of percentage.
@@ -168,7 +173,7 @@ sudo systemctl enable --now gpu-oc.service
 
 Replace the `ExecStart` arguments with your tuned values. Adjust the binary path to `/usr/local/bin/nvoc` if you installed from source.
 
-On multi-GPU systems, pin by UUID (`-d GPU-...`) or by model (`-d name:5090`). NVML device indices aren't guaranteed stable across reboots.
+On multi-GPU systems, pin by UUID (`-d GPU-...`) or by model (`-d name:5090`, or `-d "r:50[89]0"` for a regex match). NVML device indices aren't guaranteed stable across reboots.
 
 ## Limitations
 
