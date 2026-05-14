@@ -15,3 +15,4 @@ path = "src/main.rs"
 clap = { version = "4.4", features = ["derive"] }
 libc = "0.2"
 libloading = "0.8"
+regex = "1.12"

@@ -135,6 +135,17 @@ pub fn resolve_devices(spec: &Devices) -> std::result::Result<Vec<(u32, NvmlDevi
                         }
                         pairs.extend(matches);
                     }
+                    DeviceRef::Regex(re) => {
+                        let matches = resolve_regex(re, count)
+                            .map_err(|e| crate::AppError::new("device", e))?;
+                        if matches.is_empty() {
+                            return Err(crate::AppError::msg(
+                                "device",
+                                format!("no devices matched regex '{}'", re.as_str()),
+                            ));
+                        }
+                        pairs.extend(matches);
+                    }
                 }
             }
         }
@@ -161,6 +172,20 @@ fn resolve_name(pattern: &str, count: u32) -> Result<Vec<(u32, NvmlDevice)>> {
         let h = device_get_handle_by_index(i)?;
         let name = device_get_name(h)?;
         if name.to_ascii_lowercase().contains(&needle) {
+            out.push((i, h));
+        }
+    }
+    Ok(out)
+}
+
+/// Find all devices whose name matches `re` (case-sensitive regex search).
+/// Returns matches in NVML index order.
+fn resolve_regex(re: &regex::Regex, count: u32) -> Result<Vec<(u32, NvmlDevice)>> {
+    let mut out = Vec::new();
+    for i in 0..count {
+        let h = device_get_handle_by_index(i)?;
+        let name = device_get_name(h)?;
+        if re.is_match(&name) {
             out.push((i, h));
         }
     }

@@ -2,12 +2,14 @@
 
 use crate::constants::app;
 use clap::{Arg, ArgAction, Command};
+use regex::Regex;
 
 #[derive(Debug, Clone)]
 pub enum DeviceRef {
     Index(u32),
     Uuid(String),
     Name(String),
+    Regex(Regex),
 }
 
 impl PartialEq for DeviceRef {
@@ -16,6 +18,7 @@ impl PartialEq for DeviceRef {
             (DeviceRef::Index(a), DeviceRef::Index(b)) => a == b,
             (DeviceRef::Uuid(a), DeviceRef::Uuid(b)) => a == b,
             (DeviceRef::Name(a), DeviceRef::Name(b)) => a.eq_ignore_ascii_case(b),
+            (DeviceRef::Regex(a), DeviceRef::Regex(b)) => a.as_str() == b.as_str(),
             _ => false,
         }
     }
@@ -107,6 +110,17 @@ fn extract_name_pattern(tok: &str) -> Option<&str> {
     None
 }
 
+/// If `tok` begins with `regex:` or `r:` (case-insensitive), return the trimmed pattern.
+fn extract_regex_pattern(tok: &str) -> Option<&str> {
+    if tok.get(..6).is_some_and(|p| p.eq_ignore_ascii_case("regex:")) {
+        return Some(tok[6..].trim());
+    }
+    if tok.get(..2).is_some_and(|p| p.eq_ignore_ascii_case("r:")) {
+        return Some(tok[2..].trim());
+    }
+    None
+}
+
 fn parse_devices(s: &str) -> std::result::Result<Devices, String> {
     let trimmed = s.trim();
     if trimmed.is_empty() {
@@ -132,6 +146,13 @@ fn parse_devices(s: &str) -> std::result::Result<Devices, String> {
                 return Err("empty -d name pattern".into());
             }
             DeviceRef::Name(pattern.to_string())
+        } else if let Some(pattern) = extract_regex_pattern(tok) {
+            if pattern.is_empty() {
+                return Err("empty -d regex pattern".into());
+            }
+            let re = Regex::new(pattern)
+                .map_err(|e| format!("invalid -d regex '{pattern}': {e}"))?;
+            DeviceRef::Regex(re)
         } else if is_uuid_token(tok) {
             let canon = canonicalize_uuid(tok);
             DeviceRef::Uuid(canon)
@@ -167,7 +188,7 @@ fn devices_arg() -> Arg {
         .short('d')
         .long("device")
         .value_name("SPEC")
-        .help("GPU spec: index, UUID, 'name:<pat>' / 'n:<pat>', 'all', or a comma-separated mix")
+        .help("GPU spec: index, UUID, 'name:<pat>' / 'n:<pat>', 'regex:<re>' / 'r:<re>', 'all', or a comma-separated mix")
         .default_value("0")
         .value_parser(parse_devices)
 }
@@ -608,5 +629,135 @@ mod tests {
         assert_eq!(extract_name_pattern("0"), None);
         assert_eq!(extract_name_pattern("name"), None);
         assert_eq!(extract_name_pattern("n"), None);
+    }
+
+    #[test]
+    fn parses_regex_prefix() {
+        match parse_devices("regex:50[89]0").unwrap() {
+            Devices::List(v) => {
+                assert_eq!(v.len(), 1);
+                assert!(matches!(v[0], DeviceRef::Regex(ref re) if re.as_str() == "50[89]0"));
+            }
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn parses_r_shorthand() {
+        match parse_devices("r:5090").unwrap() {
+            Devices::List(v) => {
+                assert!(matches!(v[0], DeviceRef::Regex(ref re) if re.as_str() == "5090"));
+            }
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn regex_prefix_is_case_insensitive() {
+        for spec in ["REGEX:5090", "Regex:5090", "reGEx:5090", "R:5090", "r:5090"] {
+            match parse_devices(spec).unwrap() {
+                Devices::List(v) => assert!(
+                    matches!(v[0], DeviceRef::Regex(ref re) if re.as_str() == "5090"),
+                    "spec {spec}"
+                ),
+                _ => panic!("expected List for {spec}"),
+            }
+        }
+    }
+
+    #[test]
+    fn parses_regex_with_space() {
+        match parse_devices("regex:RTX 50[89]0").unwrap() {
+            Devices::List(v) => {
+                assert!(matches!(v[0], DeviceRef::Regex(ref re) if re.as_str() == "RTX 50[89]0"));
+            }
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn trims_whitespace_around_regex_pattern() {
+        match parse_devices("regex:  5090  ").unwrap() {
+            Devices::List(v) => {
+                assert!(matches!(v[0], DeviceRef::Regex(ref re) if re.as_str() == "5090"));
+            }
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn rejects_empty_regex_pattern() {
+        assert!(parse_devices("regex:").is_err());
+        assert!(parse_devices("r:").is_err());
+        assert!(parse_devices("regex:   ").is_err());
+    }
+
+    #[test]
+    fn rejects_invalid_regex() {
+        assert!(parse_devices("r:5[09").is_err());
+        assert!(parse_devices("regex:(unclosed").is_err());
+    }
+
+    #[test]
+    fn rejects_duplicate_regex_pattern() {
+        assert!(parse_devices("r:5090,r:5090").is_err());
+        assert!(parse_devices("regex:5090,r:5090").is_err());
+    }
+
+    #[test]
+    fn regex_dup_check_is_case_sensitive() {
+        // Unlike name patterns, regex dedup is an exact string compare: differing
+        // case is two distinct selectors, not a duplicate.
+        match parse_devices("r:RTX,r:rtx").unwrap() {
+            Devices::List(v) => assert_eq!(v.len(), 2),
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn regex_token_takes_priority_over_uuid_dispatch() {
+        match parse_devices("r:GPU-5090").unwrap() {
+            Devices::List(v) => {
+                assert_eq!(v.len(), 1);
+                assert!(matches!(v[0], DeviceRef::Regex(ref re) if re.as_str() == "GPU-5090"));
+            }
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn parses_mixed_index_uuid_name_and_regex() {
+        match parse_devices("0,name:5090,r:50[89]0,GPU-abc").unwrap() {
+            Devices::List(v) => {
+                assert_eq!(v.len(), 4);
+                assert_eq!(v[0], DeviceRef::Index(0));
+                assert_eq!(v[1], DeviceRef::Name("5090".into()));
+                assert!(matches!(v[2], DeviceRef::Regex(ref re) if re.as_str() == "50[89]0"));
+                assert!(matches!(v[3], DeviceRef::Uuid(_)));
+            }
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn bare_regex_or_r_without_colon_falls_through_to_invalid() {
+        assert!(parse_devices("regex").is_err());
+        assert!(parse_devices("r").is_err());
+    }
+
+    #[test]
+    fn extract_regex_pattern_recognizes_prefixes() {
+        assert_eq!(extract_regex_pattern("regex:5090"), Some("5090"));
+        assert_eq!(extract_regex_pattern("REGEX:5090"), Some("5090"));
+        assert_eq!(extract_regex_pattern("r:5090"), Some("5090"));
+        assert_eq!(extract_regex_pattern("R:5090"), Some("5090"));
+        assert_eq!(extract_regex_pattern("regex: RTX 50[89]0 "), Some("RTX 50[89]0"));
+        assert_eq!(extract_regex_pattern("regex:"), Some(""));
+        assert_eq!(extract_regex_pattern("r:"), Some(""));
+        assert_eq!(extract_regex_pattern("GPU-abc"), None);
+        assert_eq!(extract_regex_pattern("0"), None);
+        assert_eq!(extract_regex_pattern("regex"), None);
+        assert_eq!(extract_regex_pattern("r"), None);
+        assert_eq!(extract_regex_pattern("name:5090"), None);
     }
 }
