@@ -56,7 +56,7 @@ nvoc -c 200,2800 --dry-run
 - `-o, --offset <OFFSET>` - Graphics clock offset (MHz)
 - `-m, --memory-offset <OFFSET>` - Memory clock offset (MHz)
 - `-p, --power <50-150>` - Power limit percentage
-- `-d, --device <index | uuid | all>` 
+- `-d, --device <index | uuid | name:pattern | all>` 
 - `--json` - Emit JSON output (info, list)
 - `--uuid` - Emit device UUIDs separated by line break (list)
 - `--dry-run` - Preview changes
@@ -93,6 +93,10 @@ sudo nvoc -d 0,1 -c 200,2820 -o 856 -m 2000 -p 105
 
 # Using UUID (stable across reboots)
 sudo nvoc -d GPU-1234... -o 856
+
+# Using name pattern (case-insensitive substring match on device name)
+sudo nvoc -d name:5090 -o 856
+sudo nvoc -d "n:5060 Ti" -o 100
 ```
 
 Power limits are percentages of the GPU's default power limit. Bios enforces absolute min/max constraints regardless of percentage.

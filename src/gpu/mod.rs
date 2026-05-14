@@ -6,7 +6,7 @@ use crate::json;
 use crate::nvml::{
     device_get_count, device_get_handle_by_index, device_get_handle_by_uuid, device_get_index,
     device_get_name, device_get_uuid, init, shutdown, system_get_driver_version, NvmlDevice,
-    NvmlError, Result,
+    Result,
 };
 
 pub mod domain;
@@ -87,41 +87,61 @@ pub fn list_all() -> Result<Vec<DeviceListing>> {
 }
 
 /// Resolve a `Devices` spec into ordered `(index, handle)` pairs, deduplicating.
-pub fn resolve_devices(spec: &Devices) -> Result<Vec<(u32, NvmlDevice)>> {
-    let count = device_get_count()?;
+///
+/// Strict semantics: every selector must resolve to at least one device. Out-of-range
+/// indices, unknown UUIDs, and zero-match name patterns are all hard errors.
+pub fn resolve_devices(spec: &Devices) -> std::result::Result<Vec<(u32, NvmlDevice)>, crate::AppError> {
+    let count = device_get_count().map_err(|e| crate::AppError::new("device", e))?;
 
-    let pairs: Vec<(u32, NvmlDevice)> = match spec {
+    let mut pairs: Vec<(u32, NvmlDevice)> = Vec::new();
+
+    match spec {
         Devices::All => {
-            let mut v = Vec::with_capacity(count as usize);
             for i in 0..count {
-                v.push((i, device_get_handle_by_index(i)?));
+                let h = device_get_handle_by_index(i)
+                    .map_err(|e| crate::AppError::new("device", e))?;
+                pairs.push((i, h));
             }
-            v
         }
         Devices::List(refs) => {
-            let mut v = Vec::with_capacity(refs.len());
             for r in refs {
-                let (idx, handle) = match r {
+                match r {
                     DeviceRef::Index(i) => {
                         if *i >= count {
-                            return Err(NvmlError::InvalidArgument);
+                            return Err(crate::AppError::msg(
+                                "device",
+                                format!("device index {i} out of range (have {count})"),
+                            ));
                         }
-                        (*i, device_get_handle_by_index(*i)?)
+                        let h = device_get_handle_by_index(*i)
+                            .map_err(|e| crate::AppError::new("device", e))?;
+                        pairs.push((*i, h));
                     }
                     DeviceRef::Uuid(uuid) => {
-                        let h = device_get_handle_by_uuid(uuid)?;
-                        let i = device_get_index(h)?;
-                        (i, h)
+                        let h = device_get_handle_by_uuid(uuid)
+                            .map_err(|e| crate::AppError::new("device", e))?;
+                        let i = device_get_index(h)
+                            .map_err(|e| crate::AppError::new("device", e))?;
+                        pairs.push((i, h));
                     }
-                };
-                v.push((idx, handle));
+                    DeviceRef::Name(pattern) => {
+                        let matches = resolve_name(pattern, count)
+                            .map_err(|e| crate::AppError::new("device", e))?;
+                        if matches.is_empty() {
+                            return Err(crate::AppError::msg(
+                                "device",
+                                format!("no devices matched name '{pattern}'"),
+                            ));
+                        }
+                        pairs.extend(matches);
+                    }
+                }
             }
-            v
         }
-    };
+    }
 
-    // Dedup by index (handles for the same device are equal pointers, but index is the
-    // canonical identifier and avoids relying on pointer identity).
+    // Dedup by index. Multiple selectors can resolve to the same device (e.g. an index
+    // that also matches a name pattern); keep the first occurrence.
     let mut seen = std::collections::HashSet::new();
     let mut deduped = Vec::with_capacity(pairs.len());
     for (idx, h) in pairs {
@@ -130,6 +150,21 @@ pub fn resolve_devices(spec: &Devices) -> Result<Vec<(u32, NvmlDevice)>> {
         }
     }
     Ok(deduped)
+}
+
+/// Find all devices whose name contains `pattern` (case-insensitive substring).
+/// Returns matches in NVML index order.
+fn resolve_name(pattern: &str, count: u32) -> Result<Vec<(u32, NvmlDevice)>> {
+    let needle = pattern.to_ascii_lowercase();
+    let mut out = Vec::new();
+    for i in 0..count {
+        let h = device_get_handle_by_index(i)?;
+        let name = device_get_name(h)?;
+        if name.to_ascii_lowercase().contains(&needle) {
+            out.push((i, h));
+        }
+    }
+    Ok(out)
 }
 
 #[cfg(test)]
