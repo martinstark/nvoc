@@ -56,7 +56,7 @@ nvoc -c 200,2800 --dry-run
 - `-o, --offset <OFFSET>` - Graphics clock offset (MHz)
 - `-m, --memory-offset <OFFSET>` - Memory clock offset (MHz)
 - `-p, --power <50-150>` - Power limit percentage
-- `-d, --device <index | uuid | name:pattern | all>` 
+- `-d, --device <index | uuid | name:pattern | all>` - GPU device selector
 - `--json` - Emit JSON output (info, list)
 - `--uuid` - Emit device UUIDs separated by line break (list)
 - `--dry-run` - Preview changes
@@ -168,7 +168,7 @@ sudo systemctl enable --now gpu-oc.service
 
 Replace the `ExecStart` arguments with your tuned values. Adjust the binary path to `/usr/local/bin/nvoc` if you installed from source.
 
-On multi-GPU systems, pin by UUID with `-d`. NVML device indices aren't guaranteed stable across reboots.
+On multi-GPU systems, pin by UUID (`-d GPU-...`) or by model (`-d name:5090`). NVML device indices aren't guaranteed stable across reboots.
 
 ## Limitations
 
