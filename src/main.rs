@@ -159,8 +159,7 @@ fn run() -> Result<(), AppError> {
         return run_list(format);
     }
 
-    let devices = gpu::resolve_devices(&config.devices)
-        .map_err(|e| AppError::new("device", e))?;
+    let devices = gpu::resolve_devices(&config.devices)?;
 
     if devices.is_empty() {
         return Err(AppError::msg("device", "no devices selected".into()));

@@ -3,11 +3,25 @@
 use crate::constants::app;
 use clap::{Arg, ArgAction, Command};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum DeviceRef {
     Index(u32),
     Uuid(String),
+    Name(String),
 }
+
+impl PartialEq for DeviceRef {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (DeviceRef::Index(a), DeviceRef::Index(b)) => a == b,
+            (DeviceRef::Uuid(a), DeviceRef::Uuid(b)) => a == b,
+            (DeviceRef::Name(a), DeviceRef::Name(b)) => a.eq_ignore_ascii_case(b),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for DeviceRef {}
 
 #[derive(Debug, Clone)]
 pub enum Devices {
@@ -82,6 +96,17 @@ fn is_uuid_token(s: &str) -> bool {
     matches!(upper.as_deref(), Some("GPU-") | Some("MIG-"))
 }
 
+/// If `tok` begins with `name:` or `n:` (case-insensitive), return the trimmed pattern.
+fn extract_name_pattern(tok: &str) -> Option<&str> {
+    if tok.get(..5).is_some_and(|p| p.eq_ignore_ascii_case("name:")) {
+        return Some(tok[5..].trim());
+    }
+    if tok.get(..2).is_some_and(|p| p.eq_ignore_ascii_case("n:")) {
+        return Some(tok[2..].trim());
+    }
+    None
+}
+
 fn parse_devices(s: &str) -> std::result::Result<Devices, String> {
     let trimmed = s.trim();
     if trimmed.is_empty() {
@@ -102,7 +127,12 @@ fn parse_devices(s: &str) -> std::result::Result<Devices, String> {
         if tok.is_empty() {
             return Err("empty entry in -d list".into());
         }
-        let r = if is_uuid_token(tok) {
+        let r = if let Some(pattern) = extract_name_pattern(tok) {
+            if pattern.is_empty() {
+                return Err("empty -d name pattern".into());
+            }
+            DeviceRef::Name(pattern.to_string())
+        } else if is_uuid_token(tok) {
             let canon = canonicalize_uuid(tok);
             DeviceRef::Uuid(canon)
         } else {
@@ -137,7 +167,7 @@ fn devices_arg() -> Arg {
         .short('d')
         .long("device")
         .value_name("SPEC")
-        .help("GPU spec: index, comma-separated indices/UUIDs, or 'all'")
+        .help("GPU spec: index, UUID, 'name:<pat>' / 'n:<pat>', 'all', or a comma-separated mix")
         .default_value("0")
         .value_parser(parse_devices)
 }
@@ -453,5 +483,130 @@ mod tests {
             list(&[DeviceRef::Index(0)]),
             Devices::List(_)
         ));
+    }
+
+    #[test]
+    fn parses_name_prefix() {
+        match parse_devices("name:5090").unwrap() {
+            Devices::List(v) => assert_eq!(v, vec![DeviceRef::Name("5090".into())]),
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn parses_n_shorthand() {
+        match parse_devices("n:5090").unwrap() {
+            Devices::List(v) => assert_eq!(v, vec![DeviceRef::Name("5090".into())]),
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn name_prefix_is_case_insensitive() {
+        for spec in ["NAME:5090", "Name:5090", "naMe:5090", "N:5090", "n:5090"] {
+            match parse_devices(spec).unwrap() {
+                Devices::List(v) => assert_eq!(
+                    v,
+                    vec![DeviceRef::Name("5090".into())],
+                    "spec {spec}"
+                ),
+                _ => panic!("expected List for {spec}"),
+            }
+        }
+    }
+
+    #[test]
+    fn parses_name_with_space() {
+        match parse_devices("name:5060 Ti").unwrap() {
+            Devices::List(v) => assert_eq!(v, vec![DeviceRef::Name("5060 Ti".into())]),
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn parses_n_shorthand_with_space() {
+        match parse_devices("n:5060 Ti").unwrap() {
+            Devices::List(v) => assert_eq!(v, vec![DeviceRef::Name("5060 Ti".into())]),
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn trims_whitespace_around_name_pattern() {
+        match parse_devices("name:  5090  ").unwrap() {
+            Devices::List(v) => assert_eq!(v, vec![DeviceRef::Name("5090".into())]),
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn rejects_empty_name_pattern() {
+        assert!(parse_devices("name:").is_err());
+        assert!(parse_devices("n:").is_err());
+        assert!(parse_devices("name:   ").is_err());
+    }
+
+    #[test]
+    fn parses_mixed_index_uuid_and_name() {
+        match parse_devices("0,name:5090,GPU-abc").unwrap() {
+            Devices::List(v) => {
+                assert_eq!(v.len(), 3);
+                assert_eq!(v[0], DeviceRef::Index(0));
+                assert_eq!(v[1], DeviceRef::Name("5090".into()));
+                assert!(matches!(v[2], DeviceRef::Uuid(_)));
+            }
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn rejects_duplicate_name_pattern_case_insensitive() {
+        assert!(parse_devices("name:5090,name:5090").is_err());
+        assert!(parse_devices("n:5090,N:5090").is_err());
+        assert!(parse_devices("name:5090,n:5090").is_err());
+        assert!(parse_devices("name:5060 Ti,n:5060 ti").is_err());
+    }
+
+    #[test]
+    fn name_and_uuid_with_same_text_are_not_dupes() {
+        // A name pattern and a UUID never collide since their variants differ.
+        match parse_devices("name:GPU-abc,GPU-abc").unwrap() {
+            Devices::List(v) => assert_eq!(v.len(), 2),
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn name_token_takes_priority_over_uuid_dispatch() {
+        // "name:GPU-..." should be a Name selector, not a UUID, even though the body
+        // starts with the UUID prefix.
+        match parse_devices("name:GPU-5090").unwrap() {
+            Devices::List(v) => {
+                assert_eq!(v.len(), 1);
+                assert!(matches!(v[0], DeviceRef::Name(ref p) if p == "GPU-5090"));
+            }
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn bare_name_or_n_without_colon_falls_through_to_invalid() {
+        assert!(parse_devices("name").is_err());
+        assert!(parse_devices("n").is_err());
+    }
+
+    #[test]
+    fn extract_name_pattern_recognizes_prefixes() {
+        assert_eq!(extract_name_pattern("name:5090"), Some("5090"));
+        assert_eq!(extract_name_pattern("NAME:5090"), Some("5090"));
+        assert_eq!(extract_name_pattern("n:5090"), Some("5090"));
+        assert_eq!(extract_name_pattern("N:5090"), Some("5090"));
+        assert_eq!(extract_name_pattern("name: 5060 Ti "), Some("5060 Ti"));
+        assert_eq!(extract_name_pattern("name:"), Some(""));
+        assert_eq!(extract_name_pattern("n:"), Some(""));
+        assert_eq!(extract_name_pattern("GPU-abc"), None);
+        assert_eq!(extract_name_pattern("0"), None);
+        assert_eq!(extract_name_pattern("name"), None);
+        assert_eq!(extract_name_pattern("n"), None);
     }
 }
