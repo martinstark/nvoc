@@ -123,7 +123,7 @@ impl NvmlError {
             Self::NotSupported => "not supported by this gpu",
             Self::NoPermission => "not root, did you forget sudo?",
             Self::AlreadyInitialized => "nvml already initialized",
-            Self::NotFound => "gpu not found, check nvidia-smi -L",
+            Self::NotFound => "gpu not found, check nvoc list",
             Self::InsufficientSize => "buffer too small",
             Self::InsufficientPower => "insufficient power",
             Self::DriverNotLoaded => "driver not loaded, install nvidia-open and nvidia-utils",
