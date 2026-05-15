@@ -54,14 +54,17 @@ nvoc -c 200,2800 --dry-run
 
 ### Options
 
-- `-c, --clocks <MIN,MAX>` - GPU locked clocks (MHz)
-- `-o, --offset <OFFSET>` - Graphics clock offset (MHz)
-- `-m, --memory-offset <OFFSET>` - Memory clock offset (MHz)
-- `-p, --power <50-150>` - Power limit percentage
-- `-d, --device <index | uuid | name:pattern | regex:pattern | all>` - GPU device selector
-- `--json` - Emit JSON output (info, list)
-- `--uuid` - Emit device UUIDs separated by line break (list)
-- `--dry-run` - Preview changes
+```py
+-c, --clocks <MIN,MAX>       # GPU locked clocks (MHz)
+-o, --offset <OFFSET>        # Graphics clock offset (MHz)
+-m, --memory-offset <OFFSET> # Memory clock offset (MHz)
+-p, --power <50-150>         # Power limit percentage
+-d, --device <SELECTOR>      # GPU device selector
+                             # index | uuid | name:pattern | regex:pattern | all
+--json                       # Emit JSON output (info, list)
+--uuid                       # Emit device UUIDs separated by line break (list)
+--dry-run                    # Preview changes
+```
 
 ### Examples
 
