@@ -1,6 +1,6 @@
 # NVOC - NVIDIA GPU Overclocking
 
-GPU overclocking/undervolting utility for Blackwell RTX 50-series on Linux (Help wanted with Ada Lovelace and Ampere GPU support, see [Issues](https://github.com/martinstark/nvoc/issues)).
+GPU overclocking and undervolting utility for Blackwell RTX 50-series on Linux (Help wanted with Ada Lovelace and Ampere GPU support, see [Issues](https://github.com/martinstark/nvoc/issues)).
 
 Supports single and multi GPU setups. Filter GPUs by string matching, regex, or uuid.
 
@@ -59,7 +59,8 @@ nvoc -c 200,2800 --dry-run
 -o, --offset <OFFSET>        # Graphics clock offset (MHz)
 -m, --memory-offset <OFFSET> # Memory clock offset (MHz)
 -p, --power <50-150>         # Power limit percentage
--d, --device <SELECTOR>      # GPU device selector
+# use device flag on multi gpu systems, defaults to device 0
+-d, --device <SELECTOR>      # GPU device selector:
                              # index | uuid | name:pattern | regex:pattern | all
 --json                       # Emit JSON output (info, list)
 --uuid                       # Emit device UUIDs separated by line break (list)
