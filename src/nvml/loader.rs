@@ -6,7 +6,9 @@
 use libloading::Library;
 use std::sync::OnceLock;
 
-use crate::nvml::types::{NvmlClockOffset, NvmlClockType, NvmlDevice, NvmlReturn};
+use crate::nvml::types::{
+    NvmlClockOffset, NvmlClockType, NvmlDevice, NvmlDeviceArchitecture, NvmlReturn,
+};
 use libc::{c_char, c_int, c_uint};
 
 /// Global NVML library instance
@@ -110,6 +112,20 @@ pub fn nvml_device_get_name(
             .map_err(|_| crate::nvml::NvmlError::FunctionNotFound)?
     };
     Ok(unsafe { func(device, name, length) })
+}
+
+pub fn nvml_device_get_architecture(
+    device: NvmlDevice,
+    arch: *mut NvmlDeviceArchitecture,
+) -> Result<NvmlReturn, crate::nvml::NvmlError> {
+    let lib = load_nvml_library()?;
+    let func: libloading::Symbol<
+        unsafe extern "C" fn(NvmlDevice, *mut NvmlDeviceArchitecture) -> NvmlReturn,
+    > = unsafe {
+        lib.get(b"nvmlDeviceGetArchitecture")
+            .map_err(|_| crate::nvml::NvmlError::FunctionNotFound)?
+    };
+    Ok(unsafe { func(device, arch) })
 }
 
 pub fn nvml_device_get_clock_offsets(

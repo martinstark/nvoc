@@ -1,7 +1,7 @@
 //! NVOC - NVIDIA GPU overclocking utility for Linux
 //!
 //! Command-line utility for GPU overclocking using NVML.
-//! Designed for RTX 5000 series GPUs with nvidia-open drivers.
+//! Designed for Blackwell GPUs with nvidia-open drivers.
 
 use std::process;
 
