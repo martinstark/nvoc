@@ -67,6 +67,11 @@ pub const NVML_DEVICE_NAME_BUFFER_SIZE: usize = buffers::DEVICE_NAME_BUFFER_SIZE
 // NVML Clock Offset Version Constants
 pub const NVML_CLOCK_OFFSET_V1: u32 = 0x1000018; // 16777240 - Blackwell
 
+/// NVML device architecture value.
+pub type NvmlDeviceArchitecture = c_uint;
+
+pub const NVML_DEVICE_ARCH_BLACKWELL: NvmlDeviceArchitecture = 10;
+
 /// Clock offset structure for NVML (v1: Blackwell)
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -100,33 +105,6 @@ impl Default for NvmlClockOffset {
     }
 }
 
-/// GPU Architecture detection
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum GpuArchitecture {
-    Blackwell, // RTX 50-series
-    Unknown,
-}
-
-impl GpuArchitecture {
-    /// Detect GPU architecture from device name
-    pub fn from_device_name(name: &str) -> Self {
-        let name_upper = name.to_uppercase();
-
-        // Blackwell (RTX 50-series)
-        if name_upper.contains("RTX 50")
-            || name_upper.contains("5090")
-            || name_upper.contains("5080")
-            || name_upper.contains("5070")
-            || name_upper.contains("5060")
-        {
-            GpuArchitecture::Blackwell
-        } else {
-            GpuArchitecture::Unknown
-        }
-    }
-
-}
-
 impl std::fmt::Display for NvmlClockType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -148,34 +126,6 @@ impl std::fmt::Display for NvmlPerfState {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_blackwell_detection() {
-        assert_eq!(
-            GpuArchitecture::from_device_name("NVIDIA GeForce RTX 5090"),
-            GpuArchitecture::Blackwell
-        );
-        assert_eq!(
-            GpuArchitecture::from_device_name("GeForce RTX 5080"),
-            GpuArchitecture::Blackwell
-        );
-        assert_eq!(
-            GpuArchitecture::from_device_name("RTX 5070 Ti"),
-            GpuArchitecture::Blackwell
-        );
-        assert_eq!(
-            GpuArchitecture::from_device_name("GeForce RTX 5060"),
-            GpuArchitecture::Blackwell
-        );
-    }
-
-    #[test]
-    fn test_unknown_gpu() {
-        assert_eq!(
-            GpuArchitecture::from_device_name("Some Unknown GPU"),
-            GpuArchitecture::Unknown
-        );
-    }
 
     #[test]
     fn test_struct_creation() {

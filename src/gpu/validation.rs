@@ -1,13 +1,10 @@
 //! GPU validation and safety checks
 
-use crate::nvml::{device_get_name, GpuArchitecture, NvmlDevice, Result};
+use crate::nvml::{device_get_architecture, NvmlDevice, Result, NVML_DEVICE_ARCH_BLACKWELL};
 
 /// Validate that the device is a Blackwell GPU
 pub fn validate_blackwell_architecture(device: NvmlDevice) -> Result<()> {
-    let device_name = device_get_name(device)?;
-    let arch = GpuArchitecture::from_device_name(&device_name);
-
-    if arch != GpuArchitecture::Blackwell {
+    if device_get_architecture(device)? != NVML_DEVICE_ARCH_BLACKWELL {
         return Err(crate::nvml::NvmlError::NotSupported);
     }
 

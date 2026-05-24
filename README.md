@@ -1,6 +1,6 @@
 # NVOC - NVIDIA GPU Overclocking
 
-GPU overclocking and undervolting utility for Blackwell RTX 50-series on Linux (Help wanted with Ada Lovelace and Ampere GPU support, see [Issues](https://github.com/martinstark/nvoc/issues)).
+GPU overclocking and undervolting utility for NVIDIA Blackwell GPUs on Linux (Help wanted with Ada Lovelace and Ampere GPU support, see [Issues](https://github.com/martinstark/nvoc/issues)).
 
 Supports single and multi GPU setups. Filter GPUs by string matching, regex, or uuid.
 
@@ -9,7 +9,7 @@ Born out of my frustration with the lack of an API that is both easy to use in t
 ## Requirements
 
 - Linux
-- RTX 50-series GPU (5090, 5080, 5070, 5060)
+- Blackwell GPU (GeForce RTX 50-series or RTX PRO Blackwell)
 - nvidia-open 550+ driver
 - nvidia-utils package
 - root access

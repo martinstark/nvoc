@@ -13,8 +13,8 @@ pub mod types;
 
 pub use error::{NvmlError, Result};
 pub use types::{
-    GpuArchitecture, NvmlClockOffset, NvmlClockType, NvmlDevice, NvmlPerfState,
-    NVML_DEVICE_NAME_BUFFER_SIZE, NVML_SUCCESS,
+    NvmlClockOffset, NvmlClockType, NvmlDevice, NvmlDeviceArchitecture, NvmlPerfState,
+    NVML_DEVICE_ARCH_BLACKWELL, NVML_DEVICE_NAME_BUFFER_SIZE, NVML_SUCCESS,
 };
 
 pub fn init() -> Result<()> {
@@ -80,6 +80,15 @@ pub fn device_get_name(device: NvmlDevice) -> Result<String> {
         let c_str = CStr::from_ptr(name.as_ptr());
         Ok(c_str.to_string_lossy().to_string())
     }
+}
+
+pub fn device_get_architecture(device: NvmlDevice) -> Result<NvmlDeviceArchitecture> {
+    let mut arch: NvmlDeviceArchitecture = 0;
+    let result = loader::nvml_device_get_architecture(device, &mut arch)?;
+    if result != NVML_SUCCESS {
+        return Err(NvmlError::from_nvml_return(result));
+    }
+    Ok(arch)
 }
 
 pub fn device_get_uuid(device: NvmlDevice) -> Result<String> {
