@@ -279,7 +279,7 @@ impl Config {
                     .short('p')
                     .long("power")
                     .value_name("PERCENT")
-                    .help("Power limit %")
+                    .help("Power limit % of default")
                     .value_parser(clap::value_parser!(u32)),
             )
             .arg(devices_arg())
