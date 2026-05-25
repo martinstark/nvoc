@@ -1,7 +1,7 @@
 //! NVOC - NVIDIA GPU overclocking utility for Linux
 //!
 //! Command-line utility for GPU overclocking using NVML.
-//! Designed for Blackwell GPUs with nvidia-open drivers.
+//! Designed for Blackwell GPUs and experimental Ampere support with nvidia-open drivers.
 
 use std::process;
 
@@ -87,7 +87,7 @@ fn run_info(devices: &[(u32, NvmlDevice)], as_json: bool) -> bool {
     if as_json {
         let mut entries: Vec<String> = Vec::with_capacity(devices.len());
         for &(idx, dev) in devices {
-            match gpu::validation::validate_blackwell_architecture(dev) {
+            match gpu::validation::validate_supported_architecture(dev) {
                 Ok(()) => match collect_gpu_info(dev, idx) {
                     Ok(snap) => entries.push(render_json(&snap)),
                     Err(e) => {
@@ -116,7 +116,7 @@ fn run_info(devices: &[(u32, NvmlDevice)], as_json: bool) -> bool {
             None => println!("driver: n/a"),
         }
         for &(idx, dev) in devices {
-            match gpu::validation::validate_blackwell_architecture(dev) {
+            match gpu::validation::validate_supported_architecture(dev) {
                 Ok(()) => match collect_gpu_info(dev, idx) {
                     Ok(snap) => show_human(&snap),
                     Err(e) => {
@@ -142,7 +142,7 @@ where
 {
     let mut all_ok = true;
     for &(idx, dev) in devices {
-        match gpu::validation::validate_blackwell_architecture(dev) {
+        match gpu::validation::validate_supported_architecture(dev) {
             Ok(()) => {
                 if let Err(e) = f(idx, dev) {
                     all_ok = false;
