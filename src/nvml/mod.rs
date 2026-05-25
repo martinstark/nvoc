@@ -14,7 +14,7 @@ pub mod types;
 pub use error::{NvmlError, Result};
 pub use types::{
     NvmlClockOffset, NvmlClockType, NvmlDevice, NvmlDeviceArchitecture, NvmlPerfState,
-    NVML_DEVICE_ARCH_BLACKWELL, NVML_DEVICE_NAME_BUFFER_SIZE, NVML_SUCCESS,
+    NVML_DEVICE_ARCH_ADA, NVML_DEVICE_ARCH_BLACKWELL, NVML_DEVICE_NAME_BUFFER_SIZE, NVML_SUCCESS,
 };
 
 pub fn init() -> Result<()> {

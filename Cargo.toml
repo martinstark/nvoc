@@ -2,7 +2,7 @@
 name = "nvoc"
 version = "0.2.0"
 edition = "2021"
-description = "NVIDIA Blackwell GPU overclocking utility for Linux"
+description = "NVIDIA Blackwell and experimental Ada Lovelace GPU overclocking utility for Linux"
 license = "MIT"
 keywords = ["nvidia", "gpu", "overclocking", "nvml", "blackwell"]
 categories = ["command-line-utilities", "hardware-support"]
