@@ -25,15 +25,30 @@ pub struct AppError {
 
 impl AppError {
     pub fn new(domain: &'static str, source: NvmlError) -> Self {
-        Self { domain, source: Some(source), message: None, printed: false }
+        Self {
+            domain,
+            source: Some(source),
+            message: None,
+            printed: false,
+        }
     }
 
     pub fn msg(domain: &'static str, message: String) -> Self {
-        Self { domain, source: None, message: Some(message), printed: false }
+        Self {
+            domain,
+            source: None,
+            message: Some(message),
+            printed: false,
+        }
     }
 
     pub fn printed(domain: &'static str) -> Self {
-        Self { domain, source: None, message: None, printed: true }
+        Self {
+            domain,
+            source: None,
+            message: None,
+            printed: true,
+        }
     }
 }
 
@@ -148,9 +163,8 @@ where
 fn run() -> Result<(), AppError> {
     let config = cli::Config::from_args().unwrap_or_else(|e| e.exit());
 
-    if config.operation.modifies_gpu() {
-        gpu::validation::check_system_for_modification()
-            .map_err(|e| AppError::new("nvoc", e))?;
+    if config.operation.requires_root() {
+        gpu::validation::check_system_for_modification().map_err(|e| AppError::new("nvoc", e))?;
     }
 
     let _cleanup = gpu::init_with_cleanup()?;

@@ -27,15 +27,23 @@ impl Drop for CleanupGuard {
 
 pub fn init_nvml() -> std::result::Result<(), crate::AppError> {
     init().map_err(|e| crate::AppError::new("driver", e))?;
-    let driver_version = system_get_driver_version()
-        .map_err(|e| crate::AppError::new("driver", e))?;
+    let driver_version =
+        system_get_driver_version().map_err(|e| crate::AppError::new("driver", e))?;
     let major: u32 = driver_version
         .split('.')
         .next()
         .and_then(|s| s.parse().ok())
-        .ok_or_else(|| crate::AppError::msg("driver", format!("unparseable version: {driver_version}")))?;
+        .ok_or_else(|| {
+            crate::AppError::msg("driver", format!("unparseable version: {driver_version}"))
+        })?;
     if major < hardware::MIN_DRIVER_VERSION {
-        return Err(crate::AppError::msg("driver", format!("version {driver_version} too old, need {}+", hardware::MIN_DRIVER_VERSION)));
+        return Err(crate::AppError::msg(
+            "driver",
+            format!(
+                "version {driver_version} too old, need {}+",
+                hardware::MIN_DRIVER_VERSION
+            ),
+        ));
     }
     Ok(())
 }
@@ -81,7 +89,11 @@ pub fn list_all() -> Result<Vec<DeviceListing>> {
         let dev = device_get_handle_by_index(i)?;
         let name = device_get_name(dev).unwrap_or_else(|_| "unknown".into());
         let uuid = device_get_uuid(dev).unwrap_or_else(|_| String::new());
-        out.push(DeviceListing { index: i, name, uuid });
+        out.push(DeviceListing {
+            index: i,
+            name,
+            uuid,
+        });
     }
     Ok(out)
 }
@@ -90,7 +102,9 @@ pub fn list_all() -> Result<Vec<DeviceListing>> {
 ///
 /// Strict semantics: every selector must resolve to at least one device. Out-of-range
 /// indices, unknown UUIDs, and zero-match name patterns are all hard errors.
-pub fn resolve_devices(spec: &Devices) -> std::result::Result<Vec<(u32, NvmlDevice)>, crate::AppError> {
+pub fn resolve_devices(
+    spec: &Devices,
+) -> std::result::Result<Vec<(u32, NvmlDevice)>, crate::AppError> {
     let count = device_get_count().map_err(|e| crate::AppError::new("device", e))?;
 
     let mut pairs: Vec<(u32, NvmlDevice)> = Vec::new();
@@ -98,8 +112,8 @@ pub fn resolve_devices(spec: &Devices) -> std::result::Result<Vec<(u32, NvmlDevi
     match spec {
         Devices::All => {
             for i in 0..count {
-                let h = device_get_handle_by_index(i)
-                    .map_err(|e| crate::AppError::new("device", e))?;
+                let h =
+                    device_get_handle_by_index(i).map_err(|e| crate::AppError::new("device", e))?;
                 pairs.push((i, h));
             }
         }
@@ -120,8 +134,8 @@ pub fn resolve_devices(spec: &Devices) -> std::result::Result<Vec<(u32, NvmlDevi
                     DeviceRef::Uuid(uuid) => {
                         let h = device_get_handle_by_uuid(uuid)
                             .map_err(|e| crate::AppError::new("device", e))?;
-                        let i = device_get_index(h)
-                            .map_err(|e| crate::AppError::new("device", e))?;
+                        let i =
+                            device_get_index(h).map_err(|e| crate::AppError::new("device", e))?;
                         pairs.push((i, h));
                     }
                     DeviceRef::Name(pattern) => {

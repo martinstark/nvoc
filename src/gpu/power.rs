@@ -4,7 +4,11 @@ use crate::gpu::domain::{get_power_info, w_to_mw};
 use crate::nvml::{self, NvmlDevice};
 use crate::AppError;
 
-pub fn apply_power_limit(device: NvmlDevice, percentage: u32, dry_run: bool) -> Result<(), AppError> {
+pub fn apply_power_limit(
+    device: NvmlDevice,
+    percentage: u32,
+    dry_run: bool,
+) -> Result<(), AppError> {
     let power_info = get_power_info(device).map_err(|e| AppError::new("power limit", e))?;
     let target_watts = power_info.effective_watts_from_percentage(percentage);
 

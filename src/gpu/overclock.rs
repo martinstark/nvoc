@@ -14,8 +14,7 @@ fn apply_clocks(device: NvmlDevice, clocks: (u32, u32), dry_run: bool) -> Result
         println!("clocks: {min}-{max}MHz (dry run)");
         return Ok(());
     }
-    device_set_gpu_locked_clocks(device, min, max)
-        .map_err(|e| AppError::new("clocks", e))?;
+    device_set_gpu_locked_clocks(device, min, max).map_err(|e| AppError::new("clocks", e))?;
     println!("clocks: {min}-{max}MHz");
     Ok(())
 }
@@ -36,8 +35,7 @@ fn apply_memory_offset(device: NvmlDevice, offset: i32, dry_run: bool) -> Result
         println!("mem offset: {:+}MHz (dry run)", offset);
         return Ok(());
     }
-    device_set_memory_vf_offset(device, offset)
-        .map_err(|e| AppError::new("mem offset", e))?;
+    device_set_memory_vf_offset(device, offset).map_err(|e| AppError::new("mem offset", e))?;
     println!("mem offset: {:+}MHz", offset);
     Ok(())
 }
