@@ -63,8 +63,12 @@ pub enum Operation {
 }
 
 impl Operation {
-    pub fn modifies_gpu(&self) -> bool {
-        matches!(self, Operation::Reset { .. } | Operation::Overclock(_))
+    pub fn requires_root(&self) -> bool {
+        match self {
+            Operation::Reset { dry_run } => !dry_run,
+            Operation::Overclock(params) => !params.dry_run,
+            _ => false,
+        }
     }
 }
 
@@ -101,7 +105,10 @@ fn is_uuid_token(s: &str) -> bool {
 
 /// If `tok` begins with `name:` or `n:` (case-insensitive), return the trimmed pattern.
 fn extract_name_pattern(tok: &str) -> Option<&str> {
-    if tok.get(..5).is_some_and(|p| p.eq_ignore_ascii_case("name:")) {
+    if tok
+        .get(..5)
+        .is_some_and(|p| p.eq_ignore_ascii_case("name:"))
+    {
         return Some(tok[5..].trim());
     }
     if tok.get(..2).is_some_and(|p| p.eq_ignore_ascii_case("n:")) {
@@ -112,7 +119,10 @@ fn extract_name_pattern(tok: &str) -> Option<&str> {
 
 /// If `tok` begins with `regex:` or `r:` (case-insensitive), return the trimmed pattern.
 fn extract_regex_pattern(tok: &str) -> Option<&str> {
-    if tok.get(..6).is_some_and(|p| p.eq_ignore_ascii_case("regex:")) {
+    if tok
+        .get(..6)
+        .is_some_and(|p| p.eq_ignore_ascii_case("regex:"))
+    {
         return Some(tok[6..].trim());
     }
     if tok.get(..2).is_some_and(|p| p.eq_ignore_ascii_case("r:")) {
@@ -150,8 +160,8 @@ fn parse_devices(s: &str) -> std::result::Result<Devices, String> {
             if pattern.is_empty() {
                 return Err("empty -d regex pattern".into());
             }
-            let re = Regex::new(pattern)
-                .map_err(|e| format!("invalid -d regex '{pattern}': {e}"))?;
+            let re =
+                Regex::new(pattern).map_err(|e| format!("invalid -d regex '{pattern}': {e}"))?;
             DeviceRef::Regex(re)
         } else if is_uuid_token(tok) {
             let canon = canonicalize_uuid(tok);
@@ -278,13 +288,19 @@ impl Config {
 
         match matches.subcommand() {
             Some(("reset", sub_matches)) => Ok(Config {
-                devices: sub_matches.get_one::<Devices>("device").cloned().unwrap_or_default(),
+                devices: sub_matches
+                    .get_one::<Devices>("device")
+                    .cloned()
+                    .unwrap_or_default(),
                 operation: Operation::Reset {
                     dry_run: sub_matches.get_flag("dry-run"),
                 },
             }),
             Some(("info", sub_matches)) => Ok(Config {
-                devices: sub_matches.get_one::<Devices>("device").cloned().unwrap_or_default(),
+                devices: sub_matches
+                    .get_one::<Devices>("device")
+                    .cloned()
+                    .unwrap_or_default(),
                 operation: Operation::Info {
                     json: sub_matches.get_flag("json"),
                 },
@@ -318,7 +334,10 @@ impl Config {
                 }
 
                 Ok(Config {
-                    devices: matches.get_one::<Devices>("device").cloned().unwrap_or_default(),
+                    devices: matches
+                        .get_one::<Devices>("device")
+                        .cloned()
+                        .unwrap_or_default(),
                     operation: Operation::Overclock(OverclockParams {
                         clocks,
                         graphics_offset,
@@ -353,7 +372,11 @@ mod tests {
         match parse_devices("0,2,3").unwrap() {
             Devices::List(v) => assert_eq!(
                 v,
-                vec![DeviceRef::Index(0), DeviceRef::Index(2), DeviceRef::Index(3)]
+                vec![
+                    DeviceRef::Index(0),
+                    DeviceRef::Index(2),
+                    DeviceRef::Index(3)
+                ]
             ),
             _ => panic!("expected List"),
         }
@@ -500,10 +523,7 @@ mod tests {
     // future tests. Kept to suppress dead-code on the `list` helper.
     #[test]
     fn list_helper_constructs_list_variant() {
-        assert!(matches!(
-            list(&[DeviceRef::Index(0)]),
-            Devices::List(_)
-        ));
+        assert!(matches!(list(&[DeviceRef::Index(0)]), Devices::List(_)));
     }
 
     #[test]
@@ -526,11 +546,9 @@ mod tests {
     fn name_prefix_is_case_insensitive() {
         for spec in ["NAME:5090", "Name:5090", "naMe:5090", "N:5090", "n:5090"] {
             match parse_devices(spec).unwrap() {
-                Devices::List(v) => assert_eq!(
-                    v,
-                    vec![DeviceRef::Name("5090".into())],
-                    "spec {spec}"
-                ),
+                Devices::List(v) => {
+                    assert_eq!(v, vec![DeviceRef::Name("5090".into())], "spec {spec}")
+                }
                 _ => panic!("expected List for {spec}"),
             }
         }
@@ -751,7 +769,10 @@ mod tests {
         assert_eq!(extract_regex_pattern("REGEX:5090"), Some("5090"));
         assert_eq!(extract_regex_pattern("r:5090"), Some("5090"));
         assert_eq!(extract_regex_pattern("R:5090"), Some("5090"));
-        assert_eq!(extract_regex_pattern("regex: RTX 50[89]0 "), Some("RTX 50[89]0"));
+        assert_eq!(
+            extract_regex_pattern("regex: RTX 50[89]0 "),
+            Some("RTX 50[89]0")
+        );
         assert_eq!(extract_regex_pattern("regex:"), Some(""));
         assert_eq!(extract_regex_pattern("r:"), Some(""));
         assert_eq!(extract_regex_pattern("GPU-abc"), None);
@@ -759,5 +780,37 @@ mod tests {
         assert_eq!(extract_regex_pattern("regex"), None);
         assert_eq!(extract_regex_pattern("r"), None);
         assert_eq!(extract_regex_pattern("name:5090"), None);
+    }
+
+    #[test]
+    fn dry_run_operations_do_not_require_root() {
+        assert!(!Operation::Reset { dry_run: true }.requires_root());
+        assert!(!Operation::Overclock(OverclockParams {
+            clocks: Some((200, 2800)),
+            graphics_offset: None,
+            memory_offset: None,
+            power_limit: None,
+            dry_run: true,
+        })
+        .requires_root());
+    }
+
+    #[test]
+    fn mutating_operations_require_root() {
+        assert!(Operation::Reset { dry_run: false }.requires_root());
+        assert!(Operation::Overclock(OverclockParams {
+            clocks: None,
+            graphics_offset: Some(100),
+            memory_offset: None,
+            power_limit: None,
+            dry_run: false,
+        })
+        .requires_root());
+    }
+
+    #[test]
+    fn read_only_operations_do_not_require_root() {
+        assert!(!Operation::Info { json: false }.requires_root());
+        assert!(!Operation::List(ListFormat::Human).requires_root());
     }
 }

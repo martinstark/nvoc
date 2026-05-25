@@ -16,21 +16,46 @@ use crate::AppError;
 
 fn try_reset(domain: &str, f: impl FnOnce() -> Result<()>) -> bool {
     match f() {
-        Ok(()) => { println!("{domain}: reset"); true }
-        Err(e) => { eprintln!("error[{domain}]: {}", e.user_message()); false }
+        Ok(()) => {
+            println!("{domain}: reset");
+            true
+        }
+        Err(e) => {
+            eprintln!("error[{domain}]: {}", e.user_message());
+            false
+        }
     }
 }
 
 pub fn reset_gpu_settings(device: NvmlDevice, dry_run: bool) -> std::result::Result<(), AppError> {
     if dry_run {
-        println!("reset: all (dry run)");
+        println!(
+            "gpu clocks: set {}-{}MHz, then reset (dry run)",
+            clocks::BLACKWELL_IDLE_MIN,
+            clocks::BLACKWELL_IDLE_MAX
+        );
+        println!("mem clocks: reset (dry run)");
+        println!(
+            "gpu offset: {:+}MHz (dry run)",
+            clocks::DEFAULT_GRAPHICS_OFFSET
+        );
+        println!(
+            "mem offset: {:+}MHz (dry run)",
+            clocks::DEFAULT_MEMORY_OFFSET
+        );
+        println!("power limit: default (dry run)");
         return Ok(());
     }
 
     let mut ok = true;
 
     // Blackwell requires setting idle clocks before reset will succeed
-    let idle_ok = device_set_gpu_locked_clocks(device, clocks::BLACKWELL_IDLE_MIN, clocks::BLACKWELL_IDLE_MAX).is_ok();
+    let idle_ok = device_set_gpu_locked_clocks(
+        device,
+        clocks::BLACKWELL_IDLE_MIN,
+        clocks::BLACKWELL_IDLE_MAX,
+    )
+    .is_ok();
     if idle_ok {
         ok &= try_reset("gpu clocks", || device_reset_gpu_locked_clocks(device));
     } else {
@@ -41,7 +66,12 @@ pub fn reset_gpu_settings(device: NvmlDevice, dry_run: bool) -> std::result::Res
     ok &= try_reset("mem clocks", || device_reset_memory_locked_clocks(device));
 
     if !try_reset("gpu offset", || {
-        device_set_clock_offset(device, NvmlClockType::Graphics, NvmlPerfState::P0, clocks::DEFAULT_GRAPHICS_OFFSET)
+        device_set_clock_offset(
+            device,
+            NvmlClockType::Graphics,
+            NvmlPerfState::P0,
+            clocks::DEFAULT_GRAPHICS_OFFSET,
+        )
     }) {
         eprintln!("  hint: clocks may remain elevated, try sudo nvoc -o 0");
         ok = false;
