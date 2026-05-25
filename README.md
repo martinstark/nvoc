@@ -10,7 +10,7 @@ Born out of my frustration with the lack of an API that is both easy to use in t
 
 - Linux
 - Blackwell GPU (GeForce RTX 50-series or RTX PRO Blackwell)
-- nvidia-open 550+ driver
+- nvidia-open 555+ driver
 - nvidia-utils package
 - root access
 
