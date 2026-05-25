@@ -9,8 +9,7 @@ use crate::constants::clocks;
 use crate::gpu::domain::reset_power_limit;
 use crate::nvml::{
     device_reset_gpu_locked_clocks, device_reset_memory_locked_clocks, device_set_clock_offset,
-    device_set_gpu_locked_clocks, device_set_memory_vf_offset, NvmlClockType, NvmlDevice,
-    NvmlPerfState, Result,
+    device_set_memory_vf_offset, NvmlClockType, NvmlDevice, NvmlPerfState, Result,
 };
 use crate::AppError;
 
@@ -29,11 +28,7 @@ fn try_reset(domain: &str, f: impl FnOnce() -> Result<()>) -> bool {
 
 pub fn reset_gpu_settings(device: NvmlDevice, dry_run: bool) -> std::result::Result<(), AppError> {
     if dry_run {
-        println!(
-            "gpu clocks: set {}-{}MHz, then reset (dry run)",
-            clocks::BLACKWELL_IDLE_MIN,
-            clocks::BLACKWELL_IDLE_MAX
-        );
+        println!("gpu clocks: reset (dry run)");
         println!("mem clocks: reset (dry run)");
         println!(
             "gpu offset: {:+}MHz (dry run)",
@@ -49,20 +44,7 @@ pub fn reset_gpu_settings(device: NvmlDevice, dry_run: bool) -> std::result::Res
 
     let mut ok = true;
 
-    // Blackwell requires setting idle clocks before reset will succeed
-    let idle_ok = device_set_gpu_locked_clocks(
-        device,
-        clocks::BLACKWELL_IDLE_MIN,
-        clocks::BLACKWELL_IDLE_MAX,
-    )
-    .is_ok();
-    if idle_ok {
-        ok &= try_reset("gpu clocks", || device_reset_gpu_locked_clocks(device));
-    } else {
-        eprintln!("error[gpu clocks]: failed to set idle clocks for reset");
-        ok = false;
-    }
-
+    ok &= try_reset("gpu clocks", || device_reset_gpu_locked_clocks(device));
     ok &= try_reset("mem clocks", || device_reset_memory_locked_clocks(device));
 
     if !try_reset("gpu offset", || {
