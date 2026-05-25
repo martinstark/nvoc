@@ -65,14 +65,15 @@ pub const NVML_ERROR_UNKNOWN: NvmlReturn = 999;
 pub const NVML_DEVICE_NAME_BUFFER_SIZE: usize = buffers::DEVICE_NAME_BUFFER_SIZE;
 
 // NVML Clock Offset Version Constants
-pub const NVML_CLOCK_OFFSET_V1: u32 = 0x1000018; // 16777240 - Blackwell
+pub const NVML_CLOCK_OFFSET_V1: u32 = 0x1000018; // 16777240
 
 /// NVML device architecture value.
 pub type NvmlDeviceArchitecture = c_uint;
 
+pub const NVML_DEVICE_ARCH_AMPERE: NvmlDeviceArchitecture = 7;
 pub const NVML_DEVICE_ARCH_BLACKWELL: NvmlDeviceArchitecture = 10;
 
-/// Clock offset structure for NVML (v1: Blackwell)
+/// Clock offset structure for NVML (v1)
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 #[allow(non_snake_case)]
@@ -86,7 +87,7 @@ pub struct NvmlClockOffset {
 }
 
 impl NvmlClockOffset {
-    /// Create v1 struct (Blackwell)
+    /// Create v1 struct
     pub fn new_v1(clock_type: NvmlClockType, pstate: NvmlPerfState, offset: i32) -> Self {
         NvmlClockOffset {
             version: NVML_CLOCK_OFFSET_V1,

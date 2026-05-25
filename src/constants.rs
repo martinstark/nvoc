@@ -5,7 +5,8 @@ pub mod app {
     pub const VERSION: &str = env!("CARGO_PKG_VERSION");
     pub const NAME: &str = "nvoc";
     pub const AUTHOR: &str = "NVOC Contributors";
-    pub const DESCRIPTION: &str = "NVIDIA Blackwell GPU overclocking utility";
+    pub const DESCRIPTION: &str =
+        "NVIDIA Blackwell and experimental Ampere GPU overclocking utility";
 }
 
 /// Driver and hardware constraints
