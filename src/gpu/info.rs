@@ -259,7 +259,10 @@ mod tests {
     #[test]
     fn render_json_quotes_string_fields() {
         let s = render_json(&full_snapshot(2));
-        assert!(s.contains("\"name\":\"NVIDIA GeForce RTX 5090 #2\""), "got {s}");
+        assert!(
+            s.contains("\"name\":\"NVIDIA GeForce RTX 5090 #2\""),
+            "got {s}"
+        );
         assert!(s.contains("\"uuid\":\"GPU-abc-2\""), "got {s}");
     }
 
@@ -313,10 +316,11 @@ mod tests {
 
     #[test]
     fn multi_gpu_array_with_mixed_success_and_error_entries() {
-        let mut entries = Vec::new();
-        entries.push(render_json(&full_snapshot(0)));
-        entries.push(render_json_error(1, "Some GPU", "not supported by this gpu"));
-        entries.push(render_json(&empty_snapshot(2)));
+        let entries = [
+            render_json(&full_snapshot(0)),
+            render_json_error(1, "Some GPU", "not supported by this gpu"),
+            render_json(&empty_snapshot(2)),
+        ];
         let doc = format!(
             "{{\"driver\":\"595.71.05\",\"gpus\":[{}]}}",
             entries.join(",")
