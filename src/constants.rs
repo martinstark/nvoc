@@ -11,7 +11,7 @@ pub mod app {
 /// Driver and hardware constraints
 pub mod hardware {
     /// Minimum supported NVIDIA driver version
-    pub const MIN_DRIVER_VERSION: u32 = 550;
+    pub const MIN_DRIVER_VERSION: u32 = 555;
 
     /// GPU temperature sensor index for NVML calls
     pub const GPU_TEMP_SENSOR: u32 = 0;
