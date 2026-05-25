@@ -58,7 +58,7 @@ nvoc -c 200,2800 --dry-run
 -c, --clocks <MIN,MAX>       # GPU locked clocks (MHz)
 -o, --offset <OFFSET>        # Graphics clock offset (MHz)
 -m, --memory-offset <OFFSET> # Memory clock offset (MHz)
--p, --power <50-150>         # Power limit percentage
+-p, --power <PERCENT>        # Power limit percentage of default
 # use device flag on multi gpu systems, defaults to device 0
 -d, --device <SELECTOR>      # GPU device selector:
                              # index | uuid | name:pattern | regex:pattern | all
@@ -110,7 +110,7 @@ sudo nvoc -d "regex:RTX 50[89]0" -o 856
 sudo nvoc -d "r:5060( Ti)?" -o 100
 ```
 
-Power limits are percentages of the GPU's default power limit. Bios enforces absolute min/max constraints regardless of percentage.
+Power limits are percentages of the GPU's default power limit. `nvoc` does not enforce a fixed percentage range; the card's NVML min/max power limits decide the effective watts.
 
 ### Info
 
