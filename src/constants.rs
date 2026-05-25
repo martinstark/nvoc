@@ -22,10 +22,6 @@ pub mod hardware {
 
 /// Clock management and validation
 pub mod clocks {
-    /// Blackwell idle clock range for safe reset (min, max in MHz)
-    pub const BLACKWELL_IDLE_MIN: u32 = 200;
-    pub const BLACKWELL_IDLE_MAX: u32 = 250;
-
     /// Default graphics offset for reset operations
     pub const DEFAULT_GRAPHICS_OFFSET: i32 = 0;
 
