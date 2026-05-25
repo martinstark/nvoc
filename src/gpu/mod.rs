@@ -87,8 +87,15 @@ pub fn list_all() -> Result<Vec<DeviceListing>> {
     let mut out = Vec::with_capacity(count as usize);
     for i in 0..count {
         let dev = device_get_handle_by_index(i)?;
-        let name = device_get_name(dev).unwrap_or_else(|_| "unknown".into());
-        let uuid = device_get_uuid(dev).unwrap_or_else(|_| String::new());
+        let Ok(name) = device_get_name(dev) else {
+            continue;
+        };
+        let Ok(uuid) = device_get_uuid(dev) else {
+            continue;
+        };
+        if !is_valid_nvml_uuid(&uuid) {
+            continue;
+        }
         out.push(DeviceListing {
             index: i,
             name,
@@ -96,6 +103,12 @@ pub fn list_all() -> Result<Vec<DeviceListing>> {
         });
     }
     Ok(out)
+}
+
+fn is_valid_nvml_uuid(uuid: &str) -> bool {
+    uuid.strip_prefix("GPU-")
+        .or_else(|| uuid.strip_prefix("MIG-"))
+        .is_some_and(|suffix| !suffix.is_empty())
 }
 
 /// Resolve a `Devices` spec into ordered `(index, handle)` pairs, deduplicating.
@@ -250,5 +263,15 @@ mod tests {
     fn render_list_json_escapes_names() {
         let s = render_list_json(&[listing(0, "weird\"name", "GPU-x")]);
         assert!(s.contains("\"name\":\"weird\\\"name\""), "got {s}");
+    }
+
+    #[test]
+    fn valid_nvml_uuid_requires_known_prefix() {
+        assert!(is_valid_nvml_uuid("GPU-abc"));
+        assert!(is_valid_nvml_uuid("MIG-abc"));
+        assert!(!is_valid_nvml_uuid(""));
+        assert!(!is_valid_nvml_uuid("GPU-"));
+        assert!(!is_valid_nvml_uuid("unknown"));
+        assert!(!is_valid_nvml_uuid("gpu-abc"));
     }
 }
