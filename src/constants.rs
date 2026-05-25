@@ -38,8 +38,8 @@ pub mod buffers {
     /// Driver version string buffer size
     pub const DRIVER_VERSION_BUFFER_SIZE: usize = 80;
 
-    /// Device name buffer size
-    pub const DEVICE_NAME_BUFFER_SIZE: usize = 64;
+    /// Device name buffer size (NVML_DEVICE_NAME_V2_BUFFER_SIZE = 96)
+    pub const DEVICE_NAME_BUFFER_SIZE: usize = 96;
 
     /// UUID string buffer size (NVML_DEVICE_UUID_V2_BUFFER_SIZE = 96)
     pub const DEVICE_UUID_BUFFER_SIZE: usize = 96;
